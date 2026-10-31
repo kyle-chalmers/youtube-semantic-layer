@@ -1,21 +1,12 @@
--- How many rows each weekly refresh changed for one month, comparing the archived
--- copy of each row with the current table. A month is settled once refreshes stop
--- changing it. Replace the project and dataset with your own.
-with cur as (
-    select video_id, activity_date, estimated_minutes_watched as minutes
-    from `your-gcp-project-id.youtube_analytics.daily_video_analytics`
-    where activity_date between '2026-09-01' and '2026-09-30'
-),
-arc as (
-    select video_id, activity_date, archived_at, estimated_minutes_watched as minutes
-    from `your-gcp-project-id.youtube_analytics.daily_video_analytics_refresh_archive`
-    where activity_date between '2026-09-01' and '2026-09-30'
-)
+-- How far back each weekly refresh rewrote the analytics table.
+-- A month is final once a refresh has run more than that many days after its last day.
+-- Replace the project and dataset with your own.
 select
-    date(arc.archived_at) as refresh_date,
-    count(*) as rows_compared,
-    countif(abs(arc.minutes - cur.minutes) > 0.01) as rows_changed
-from arc
-join cur using (video_id, activity_date)
-group by refresh_date
-order by refresh_date
+    refresh_run_id,
+    date(min(archived_at)) as refreshed_on,
+    min(activity_date) as oldest_day_rewritten,
+    max(activity_date) as newest_day_rewritten,
+    date_diff(date(min(archived_at)), min(activity_date), day) as days_back
+from `your-gcp-project-id.youtube_analytics.daily_video_analytics_refresh_archive`
+group by refresh_run_id
+order by refreshed_on desc

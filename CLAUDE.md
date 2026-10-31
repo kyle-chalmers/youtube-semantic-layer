@@ -20,7 +20,7 @@ Intended users: data professionals and analytics engineers.
 ## Data notes
 - `video_metadata` has one row per video per snapshot date; always use `stg_video_metadata`, which keeps the latest snapshot.
 - Views are reconstructed in staging as minutes watched * 60 / average view duration.
-- Recent days are restated by weekly refreshes; treat a month as settled about two weeks after it closes.
+- Each weekly refresh rewrites the last 35 days of analytics, so a month is final only once a refresh has run more than 35 days after its last day (about five weeks after it closes). `canary/sql/settled_months.sql` shows the window.
 
 ## Working principles
 - Print SQL as a formatted code block before running it.

@@ -8,7 +8,7 @@ Video walkthrough: [Kyle Chalmers Data Plus AI on YouTube](https://www.youtube.c
 
 ## Why a canary
 
-`mf validate-configs` checks that the YAML parses, references resolve and the SQL runs against the warehouse. It never checks a value ([dbt docs](https://docs.getdbt.com/docs/build/validation)). A metric can pass every tier and still answer the wrong question, and a later change to a model can move a number without failing anything. The canary compares the numbers themselves.
+`mf validate-configs` checks that the YAML parses, references resolve and the SQL runs against the warehouse. It never checks a value ([dbt docs](https://docs.getdbt.com/docs/build/validation)). dbt data tests can assert aggregates on models; the canary instead pins what MetricFlow itself returns for each metric. A metric can pass every tier and still answer the wrong question, and a later change to a model can move a number without failing anything. The canary compares the numbers themselves.
 
 ![What each check catches when the model changes](./images/semantic-layer-dbt-diagrams-01.png)
 
@@ -42,6 +42,10 @@ Query a metric:
 mf query --metrics avg_view_duration --group-by metric_time__month --start-time 2026-09-01 --end-time 2026-09-30
 ```
 
+## Metric canary skill
+
+`.claude/skills/metricflow-canary` is a Claude Code skill that builds the canary for any dbt project with MetricFlow: it reconciles chosen metrics against an independent query on the source tables, pins settled periods in `canary/approved.csv`, and adds `canary/check_metrics.py` (exit 0 when everything matches, 1 when a number moved, 2 when the check could not run). Open this repo in Claude Code, or copy the folder into your own project's `.claude/skills/`, and ask for a metric canary.
+
 ## Project layout
 
 ```
@@ -55,7 +59,7 @@ canary/
 
 ## Settled months
 
-YouTube revises recent days, and the pipeline's weekly refresh reloads them. `canary/sql/settled_months.sql` counts how many rows each refresh changed for a month. Pin only months the refreshes have stopped changing; on this data that is about two weeks after the month closes.
+YouTube revises recent days, and the pipeline's weekly refresh rewrites the last 35 days. `canary/sql/settled_months.sql` shows how far back each refresh reached. Pin only months that no refresh can rewrite again: on this data, about five weeks after the month closes.
 
 ## What the canary does not cover
 

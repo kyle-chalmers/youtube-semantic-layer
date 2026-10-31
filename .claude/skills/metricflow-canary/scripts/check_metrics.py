@@ -104,7 +104,9 @@ def run_mf_query() -> list[dict[str, str]]:
         out = Path(tmp) / "mf_query.csv"
         run([find_tool("mf"), *MF_QUERY_ARGS, "--csv", str(out)])
         if not out.exists():
-            raise CanaryError("mf query succeeded but wrote no CSV.")
+            # mf exits 0 and writes no CSV when the query returns no rows. Treat that
+            # as an empty result so every pinned row is reported as missing.
+            return []
         with out.open(newline="") as f:
             return list(csv.DictReader(f))
 
