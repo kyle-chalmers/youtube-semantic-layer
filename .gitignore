@@ -1,0 +1,21 @@
+# dbt
+target/
+dbt_packages/
+logs/
+.user.yml
+profiles.yml
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Environment and private notes
+.env
+.internal/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+.claude/settings.local.json

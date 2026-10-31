@@ -1,0 +1,30 @@
+semantic_models:
+  - name: video_days
+    description: "Daily YouTube analytics per video, one row per video per activity day."
+    model: ref('fct_video_days')
+    defaults:
+      agg_time_dimension: activity_date
+    entities:
+      - name: video_day
+        type: primary
+        expr: concat(video_id, '-', cast(activity_date as string))
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: activity_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: video_type
+        type: categorical
+        description: "full_length or short."
+    measures:
+      - name: avg_view_duration_daily
+        description: "Average of the daily average view duration column."
+        agg: average
+        expr: average_view_duration_seconds
+      - name: minutes_watched
+        description: "Total estimated minutes watched."
+        agg: sum
+        expr: estimated_minutes_watched

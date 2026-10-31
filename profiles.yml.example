@@ -1,0 +1,13 @@
+# Copy to profiles.yml in this folder (it is gitignored) and fill in your project.
+# Authenticate first with: gcloud auth application-default login
+youtube_semantic_layer:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: your-gcp-project-id
+      dataset: dbt_semantic_layer
+      location: us-central1  # same location as your source dataset
+      threads: 4
+      job_execution_timeout_seconds: 300

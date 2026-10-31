@@ -1,0 +1,22 @@
+config-version: 2
+
+name: youtube_semantic_layer
+version: "1.0.0"
+require-dbt-version: ">=1.9.0"
+
+profile: youtube_semantic_layer
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  youtube_semantic_layer:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

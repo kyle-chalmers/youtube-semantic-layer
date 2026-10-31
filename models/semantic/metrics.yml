@@ -1,0 +1,14 @@
+metrics:
+  - name: avg_view_duration
+    description: "Average view duration in seconds."
+    label: Average View Duration (seconds)
+    type: simple
+    type_params:
+      measure: avg_view_duration_daily
+
+  - name: total_minutes_watched
+    description: "Total estimated minutes watched."
+    label: Minutes Watched
+    type: simple
+    type_params:
+      measure: minutes_watched

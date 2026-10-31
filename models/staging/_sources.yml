@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: youtube
+    database: "{{ env_var('YOUTUBE_SOURCE_PROJECT', target.database) }}"
+    schema: "{{ env_var('YOUTUBE_SOURCE_DATASET', 'youtube_analytics') }}"
+    tables:
+      - name: daily_video_analytics
+        description: One row per video per activity day from the YouTube Analytics API, refreshed weekly.
+      - name: video_metadata
+        description: Video attributes from the YouTube Data API, one row per video per snapshot date.
