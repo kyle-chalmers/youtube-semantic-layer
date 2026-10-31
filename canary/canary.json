@@ -1,0 +1,7 @@
+{
+  "metrics": ["avg_view_duration_seconds", "total_seconds_watched", "total_views"],
+  "group_by": "metric_time__month",
+  "start_time": "2026-07-01",
+  "end_time": "2026-08-31",
+  "decimals": 2
+}
