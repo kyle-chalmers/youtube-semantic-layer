@@ -43,9 +43,10 @@ or Postgres.
    below), then run `python canary/check_metrics.py --pin` once to write `canary/approved.csv` from
    the reconciled query. `--pin` refuses to overwrite an existing approved.csv.
 4. **Check.** Run `python canary/check_metrics.py`. It must exit 0. Show the output.
-5. **Schedule (only if asked).** The check needs warehouse credentials wherever it runs. A
-   nightly CI job or cron that runs `dbt parse && python canary/check_metrics.py` is enough;
-   exit code 1 means a number moved, 2 means the check could not run.
+5. **Schedule (only if asked).** The check queries whatever tables the last `dbt build` left in
+   the warehouse, so run it right after your normal build, in the same target (for example
+   `dbt build && python canary/check_metrics.py`). It needs warehouse credentials wherever it
+   runs. Exit code 1 means a number moved, 2 means the check could not run.
 
 `canary/canary.json`:
 

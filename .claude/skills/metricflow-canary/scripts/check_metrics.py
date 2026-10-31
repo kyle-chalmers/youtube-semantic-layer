@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+from decimal import InvalidOperation
 import shutil
 import subprocess
 import sys
@@ -47,7 +48,10 @@ class CanaryError(Exception):
 def load_config() -> dict:
     if not CONFIG_JSON.exists():
         raise CanaryError(f"{CONFIG_JSON} not found.")
-    cfg = json.loads(CONFIG_JSON.read_text())
+    try:
+        cfg = json.loads(CONFIG_JSON.read_text())
+    except json.JSONDecodeError as err:
+        raise CanaryError(f"{CONFIG_JSON.name} is not valid JSON: {err}") from err
     missing = {"metrics", "group_by", "start_time", "end_time"} - set(cfg)
     if missing:
         raise CanaryError(f"{CONFIG_JSON.name} is missing {sorted(missing)}.")
@@ -134,7 +138,10 @@ def normalize(rows: list[dict[str, str]], source: str) -> list[dict[str, str]]:
     """Order by the group-by value and round every metric, as strings."""
     if rows and set(COLUMNS) - set(rows[0]):
         raise CanaryError(f"{source} has columns {list(rows[0])}, expected {COLUMNS}.")
-    out = [{GROUP_BY: to_period(r[GROUP_BY]), **{m: round_value(r[m]) for m in METRICS}} for r in rows]
+    try:
+        out = [{GROUP_BY: to_period(r[GROUP_BY]), **{m: round_value(r[m]) for m in METRICS}} for r in rows]
+    except (InvalidOperation, AttributeError, KeyError, TypeError) as err:
+        raise CanaryError(f"{source} has a missing or non-numeric value: {err!r}") from err
     keys = [r[GROUP_BY] for r in out]
     if len(keys) != len(set(keys)):
         raise CanaryError(f"{source} has more than one row for the same {GROUP_BY}.")
