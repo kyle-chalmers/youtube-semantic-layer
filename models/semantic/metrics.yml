@@ -1,10 +1,25 @@
 metrics:
-  - name: avg_view_duration
-    description: "Average view duration in seconds."
-    label: Average View Duration (seconds)
+  - name: total_seconds_watched
+    description: "Total estimated seconds watched."
+    label: Seconds Watched
     type: simple
     type_params:
-      measure: avg_view_duration_daily
+      measure: total_seconds_watched
+
+  - name: total_views
+    description: "Total views."
+    label: Views
+    type: simple
+    type_params:
+      measure: total_views
+
+  - name: avg_view_duration_seconds
+    description: "Average view duration in seconds: total watch time divided by total views."
+    label: Average View Duration (seconds)
+    type: ratio
+    type_params:
+      numerator: total_seconds_watched
+      denominator: total_views
 
   - name: total_minutes_watched
     description: "Total estimated minutes watched."

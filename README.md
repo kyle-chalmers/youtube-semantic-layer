@@ -39,7 +39,7 @@ mf validate-configs
 Query a metric:
 
 ```bash
-mf query --metrics avg_view_duration --group-by metric_time__month --start-time 2026-09-01 --end-time 2026-09-30
+mf query --metrics avg_view_duration_seconds --group-by metric_time__month --start-time 2026-09-01 --end-time 2026-09-30
 ```
 
 ## Metric canary skill

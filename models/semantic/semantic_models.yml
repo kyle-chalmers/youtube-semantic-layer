@@ -20,11 +20,15 @@ semantic_models:
         type: categorical
         description: "full_length or short."
     measures:
-      - name: avg_view_duration_daily
-        description: "Average of the daily average view duration column."
-        agg: average
-        expr: average_view_duration_seconds
       - name: minutes_watched
         description: "Total estimated minutes watched."
         agg: sum
         expr: estimated_minutes_watched
+      - name: total_seconds_watched
+        description: "Total estimated seconds watched."
+        agg: sum
+        expr: estimated_minutes_watched * 60
+      - name: total_views
+        description: "Total views, reconstructed in staging as minutes watched * 60 / average view duration."
+        agg: sum
+        expr: views
