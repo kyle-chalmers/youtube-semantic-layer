@@ -10,6 +10,8 @@ Video walkthrough: [Kyle Chalmers Data Plus AI on YouTube](https://www.youtube.c
 
 `mf validate-configs` checks that the YAML parses, references resolve and the SQL runs against the warehouse. It never checks a value ([dbt docs](https://docs.getdbt.com/docs/build/validation)). A metric can pass every tier and still answer the wrong question, and a later change to a model can move a number without failing anything. The canary compares the numbers themselves.
 
+![What each check catches when the model changes](./images/semantic-layer-dbt-diagrams-01.png)
+
 ## Data
 
 The source tables come from the [youtube-bigquery-pipeline](https://github.com/kyle-chalmers/youtube-bigquery-pipeline) project:
