@@ -54,7 +54,18 @@ models/
   marts/       fct_video_days (one row per video per day, with video type)
   semantic/    semantic_models.yml, metrics.yml
 canary/
-  sql/         settled_months.sql (which refreshes changed a month's rows)
+  canary.json        which metrics, grain and months the canary pins
+  approved.csv       the reconciled answer for July and August 2026
+  check_metrics.py   re-runs mf query and compares it to approved.csv
+  sql/               settled_months.sql (how far back each refresh rewrites)
+.claude/skills/metricflow-canary/   the Claude Code skill that builds the canary
+```
+
+## Run the canary
+
+```bash
+dbt build
+python canary/check_metrics.py   # exit 0: every number matches; 1: a number moved; 2: the check could not run
 ```
 
 ## Settled months
