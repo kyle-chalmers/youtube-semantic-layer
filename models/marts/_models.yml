@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: dim_videos
+    columns:
+      - name: video_id
+        data_tests: [unique, not_null]
+  - name: fct_video_activity_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_video_traffic_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_video_traffic_detail_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_video_reach_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_video_demographic_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_video_card_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_video_end_screen_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_video_share_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_video_lifetime_snapshots
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_video_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]
+  - name: fct_analytics_traffic_days
+    columns:
+      - name: row_key
+        data_tests: [unique, not_null]

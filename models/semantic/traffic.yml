@@ -1,0 +1,139 @@
+semantic_models:
+  - name: video_traffic_days
+    description: "Views, engaged views and watch time per Pacific day, video, subscribed status, country, traffic source, device, OS and playback location (Reporting API combined report). Complete from 2026-08-06."
+    model: ref('fct_video_traffic_days')
+    defaults:
+      agg_time_dimension: report_date
+    entities:
+      - name: video_traffic_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: report_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: attribution
+        type: categorical
+        description: "video, or channel for activity YouTube does not tie to a video (always zero views)."
+      - name: subscribed_status
+        type: categorical
+      - name: country_code
+        type: categorical
+      - name: traffic_source
+        type: categorical
+        description: "How the viewer found the video (YouTube search, Shorts feed, Suggested videos, ...)."
+      - name: device_type
+        type: categorical
+      - name: operating_system
+        type: categorical
+      - name: playback_location
+        type: categorical
+    measures:
+      - name: views
+        agg: sum
+      - name: engaged_views
+        agg: sum
+      - name: watch_time_minutes
+        agg: sum
+      - name: seconds_watched
+        agg: sum
+        expr: watch_time_minutes * 60
+
+  - name: video_traffic_detail_days
+    description: "Views per Pacific day, video, traffic source and traffic source detail (search term, referring video or site). Complete from 2026-08-06."
+    model: ref('fct_video_traffic_detail_days')
+    defaults:
+      agg_time_dimension: report_date
+    entities:
+      - name: video_traffic_detail_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: report_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: traffic_source
+        type: categorical
+      - name: traffic_source_detail
+        type: categorical
+        description: "Search term, referring video id or site. Null when YouTube withholds it for low volume."
+    measures:
+      - name: detail_views
+        agg: sum
+        expr: views
+
+metrics:
+- name: total_views
+  label: Views
+  description: Views as YouTube counts them (Reporting API). Since 2026-08-24 YouTube counts a view when
+    playback starts; Shorts always worked that way. Additive. Group by traffic source, device, OS, playback
+    location, subscribed status, country or video.
+  type: simple
+  type_params:
+    measure: views
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_combined_a3
+- name: total_engaged_views
+  label: Engaged Views
+  description: 'Engaged views (Reporting API): views past YouTube''s engagement threshold. Average view
+    duration is computed over these. Additive.'
+  type: simple
+  type_params:
+    measure: engaged_views
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_combined_a3
+- name: total_seconds_watched
+  label: Seconds Watched
+  description: Total watch time in seconds (Reporting API watch time minutes * 60, not truncated). Additive.
+  type: simple
+  type_params:
+    measure: seconds_watched
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_combined_a3
+- name: total_minutes_watched
+  label: Minutes Watched
+  description: Total watch time in minutes (Reporting API, not truncated). Additive.
+  type: simple
+  type_params:
+    measure: watch_time_minutes
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_combined_a3
+- name: avg_view_duration_seconds
+  label: Average View Duration (seconds)
+  description: 'Average view duration in seconds: total seconds watched divided by engaged views, which
+    is how YouTube computes it. Not additive; always recompute from the two totals.'
+  type: ratio
+  type_params:
+    numerator: total_seconds_watched
+    denominator: total_engaged_views
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_combined_a3
+- name: traffic_detail_views
+  label: Views by Traffic Detail
+  description: Views from the traffic source report, for grouping by traffic_source_detail (search term,
+    referring video or site). Totals match total_views; use total_views unless the detail is the question.
+  type: simple
+  type_params:
+    measure: detail_views
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_traffic_source_a3

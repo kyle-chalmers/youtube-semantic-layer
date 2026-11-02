@@ -1,0 +1,45 @@
+semantic_models:
+  - name: video_demographic_days
+    description: "Estimated views by age group and gender per Pacific day and video. Complete from 2026-08-06, but YouTube only reports demographics for videos with enough logged-in viewers (17 to 24 videos a month)."
+    model: ref('fct_video_demographic_days')
+    defaults:
+      agg_time_dimension: report_date
+    entities:
+      - name: video_demographic_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: report_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: age_group
+        type: categorical
+      - name: gender
+        type: categorical
+      - name: subscribed_status
+        type: categorical
+      - name: country_code
+        type: categorical
+    measures:
+      - name: estimated_demographic_views
+        agg: sum
+        expr: estimated_views
+
+metrics:
+- name: estimated_demographic_views
+  label: Estimated Views by Demographic
+  description: 'Estimated views by age group and gender: each row''s share of the video-day''s logged-in
+    views applied to the video-day''s total views. An estimate, and only covers videos YouTube reports
+    demographics for (17 to 24 a month). For a share, divide each group''s value by the total of all groups
+    in the same query.'
+  type: simple
+  type_params:
+    measure: estimated_demographic_views
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_demographics_a1

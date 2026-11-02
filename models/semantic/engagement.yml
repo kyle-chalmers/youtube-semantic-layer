@@ -1,0 +1,175 @@
+semantic_models:
+  - name: video_card_days
+    description: "Card and card teaser impressions and clicks per Pacific day, video and card. Complete from 2026-08-06."
+    model: ref('fct_video_card_days')
+    defaults:
+      agg_time_dimension: report_date
+    entities:
+      - name: video_card_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: report_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: card_type
+        type: categorical
+    measures:
+      - name: card_impressions
+        agg: sum
+      - name: card_clicks
+        agg: sum
+      - name: card_teaser_impressions
+        agg: sum
+      - name: card_teaser_clicks
+        agg: sum
+
+  - name: video_end_screen_days
+    description: "End screen element impressions and clicks per Pacific day, video and element. Complete from 2026-08-06."
+    model: ref('fct_video_end_screen_days')
+    defaults:
+      agg_time_dimension: report_date
+    entities:
+      - name: video_end_screen_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: report_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: end_screen_element_type
+        type: categorical
+    measures:
+      - name: end_screen_impressions
+        agg: sum
+        expr: end_screen_element_impressions
+      - name: end_screen_clicks
+        agg: sum
+        expr: end_screen_element_clicks
+
+  - name: video_share_days
+    description: "Shares per Pacific day, video and sharing service. Complete from 2026-08-06."
+    model: ref('fct_video_share_days')
+    defaults:
+      agg_time_dimension: report_date
+    entities:
+      - name: video_share_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: report_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: sharing_service
+        type: categorical
+    measures:
+      - name: service_shares
+        agg: sum
+        expr: shares
+
+metrics:
+- name: card_impressions
+  label: Card Impressions
+  description: Card impressions. Additive.
+  type: simple
+  type_params:
+    measure: card_impressions
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_cards_a1
+- name: card_clicks
+  label: Card Clicks
+  description: Card clicks. Additive.
+  type: simple
+  type_params:
+    measure: card_clicks
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_cards_a1
+- name: card_click_rate
+  label: Card Click Rate
+  description: Card clicks divided by card impressions, as a fraction.
+  type: ratio
+  type_params:
+    numerator: card_clicks
+    denominator: card_impressions
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_cards_a1
+- name: card_teaser_impressions
+  label: Card Teaser Impressions
+  description: Card teaser impressions. Additive.
+  type: simple
+  type_params:
+    measure: card_teaser_impressions
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_cards_a1
+- name: card_teaser_clicks
+  label: Card Teaser Clicks
+  description: Card teaser clicks. Additive.
+  type: simple
+  type_params:
+    measure: card_teaser_clicks
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_cards_a1
+- name: end_screen_impressions
+  label: End Screen Impressions
+  description: End screen element impressions. Additive.
+  type: simple
+  type_params:
+    measure: end_screen_impressions
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_end_screens_a1
+- name: end_screen_clicks
+  label: End Screen Clicks
+  description: End screen element clicks. Additive.
+  type: simple
+  type_params:
+    measure: end_screen_clicks
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_end_screens_a1
+- name: end_screen_click_rate
+  label: End Screen Click Rate
+  description: End screen clicks divided by end screen impressions, as a fraction.
+  type: ratio
+  type_params:
+    numerator: end_screen_clicks
+    denominator: end_screen_impressions
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_end_screens_a1
+- name: shares_by_service
+  label: Shares by Service
+  description: Shares from the sharing service report, for grouping by sharing_service. Totals match total_shares;
+    use total_shares otherwise.
+  type: simple
+  type_params:
+    measure: service_shares
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_sharing_service_a1

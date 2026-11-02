@@ -1,0 +1,68 @@
+semantic_models:
+  - name: video_reach_days
+    description: "Thumbnail impressions and clicks per Pacific day, video, traffic source, detail, device and OS (Reporting API reach report). Complete from 2026-08-06. Impressions exist only on six surfaces: YouTube search, suggested videos, browse features, channel page, playlists and playlist pages."
+    model: ref('fct_video_reach_days')
+    defaults:
+      agg_time_dimension: report_date
+    entities:
+      - name: video_reach_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: report_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: traffic_source
+        type: categorical
+      - name: traffic_source_detail
+        type: categorical
+      - name: device_type
+        type: categorical
+      - name: operating_system
+        type: categorical
+    measures:
+      - name: impressions
+        agg: sum
+      - name: impression_clicks
+        agg: sum
+        description: "Impressions times impressions CTR (stored as a fraction), so clicks from a thumbnail impression."
+
+metrics:
+- name: total_impressions
+  label: Impressions
+  description: 'Thumbnail impressions (Reporting API reach report). Only six surfaces have impressions:
+    YouTube search, suggested videos, browse features, channel page, playlists and playlist pages. No
+    Shorts feed, external or direct traffic, so never divide views by impressions. Additive.'
+  type: simple
+  type_params:
+    measure: impressions
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_reach_combined_a1
+- name: impression_clicks
+  label: Impression Clicks
+  description: 'Views that came from a thumbnail impression: impressions times impressions CTR. Additive.'
+  type: simple
+  type_params:
+    measure: impression_clicks
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_reach_combined_a1
+- name: impressions_ctr
+  label: Impressions CTR
+  description: 'Impressions click-through rate as a fraction (0.05 = 5%): impression clicks divided by
+    impressions. Not additive; recomputed from the two totals. Covers only the six impression surfaces.'
+  type: ratio
+  type_params:
+    numerator: impression_clicks
+    denominator: total_impressions
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_reach_combined_a1

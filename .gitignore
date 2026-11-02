@@ -19,3 +19,6 @@ __pycache__/
 .vscode/
 .idea/
 .claude/settings.local.json
+
+# Working plans (not source)
+.planning/

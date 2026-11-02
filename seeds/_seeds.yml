@@ -1,0 +1,13 @@
+version: 2
+
+seeds:
+  - name: reporting_codes
+    description: >
+      Code to name lookup for YouTube Reporting API dimensions, from
+      https://developers.google.com/youtube/reporting/v1/reports/dimensions (checked 2026-11-02).
+      Sharing services list only common codes; an unlisted code shows as "Code <n>".
+    config:
+      column_types:
+        dimension: string
+        code: string
+        name: string

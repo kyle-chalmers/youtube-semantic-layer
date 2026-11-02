@@ -9,6 +9,12 @@ profile: youtube_semantic_layer
 model-paths: ["models"]
 test-paths: ["tests"]
 macro-paths: ["macros"]
+seed-paths: ["seeds"]
+
+vars:
+  # Every Reporting API table has complete daily data from this date. Earlier days are
+  # missing from some tables (basic has a 15-day gap in June 2026, combined starts here).
+  reporting_complete_from: "2026-08-06"
 
 clean-targets:
   - "target"
