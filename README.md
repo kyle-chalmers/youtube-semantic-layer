@@ -117,7 +117,7 @@ One workflow, `.github/workflows/canary.yml`, runs on GitHub's free runners for 
 | Job | Steps | Writes to BigQuery |
 |---|---|---|
 | canary | unit tests, `dbt build`, `mf validate-configs`, glossary check, `check_metrics.py --quiet --record` | `canary_runs` (one row per metric and month, every run), `canary_baseline` (approved.csv) |
-| report (after canary, even if a number moved) | `dbt parse`, `report/weekly_report.py` (only `mf query` output) | `weekly_channel_report` (the latest complete week and the week before, per section, marked provisional) |
+| report (after canary, even if a number moved) | `dbt parse`, `report/weekly_report.py` (only `mf query` output) | `weekly_channel_report` (the latest complete week and the week before, per section, marked provisional, with the number of days each metric had data; sparse sections such as demographics never block the week) |
 
 To send the trigger from another system, POST to `https://api.github.com/repos/<owner>/youtube-semantic-layer/dispatches` with body `{"event_type": "youtube-refresh-complete"}` and a fine-grained personal access token limited to this repository with Contents: write, the minimum GitHub lists for that endpoint (https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens).
 

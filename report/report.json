@@ -33,7 +33,8 @@
     {
       "name": "estimated_views_by_age",
       "metrics": ["estimated_demographic_views"],
-      "group_by": ["video_demographic_day__age_group"]
+      "group_by": ["video_demographic_day__age_group"],
+      "sparse": true
     }
   ]
 }

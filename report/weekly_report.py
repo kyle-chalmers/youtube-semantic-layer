@@ -3,7 +3,9 @@
 
 Every number comes from `mf query`, so the report uses the same metric definitions as the
 canary and the agents. The report week is the latest 7 days that every metric in the report
-has data for, compared with the 7 days before. Rows are marked provisional because YouTube
+has data for, compared with the 7 days before. A section marked "sparse" (data on only
+some days, like demographics) does not set or block the week; every row records how many
+of the 7 days its metric had data for. Rows are marked provisional because YouTube
 can still restate days for about five weeks.
 
     python report/weekly_report.py             # query and append to BigQuery
@@ -86,26 +88,36 @@ def _day(value: str) -> date:
     return date.fromisoformat(value[:10])
 
 
-def find_window(config: dict, run_query: RunQuery, today: date) -> tuple[tuple[date, date], tuple[date, date]]:
+Window = tuple[date, date]
+
+
+def find_window(config: dict, run_query: RunQuery, today: date) -> tuple[Window, Window, dict[str, set[date]]]:
+    """The current and prior weeks, plus the days each metric has data on."""
     metrics = sorted({m for s in config["sections"] for m in s["metrics"]})
+    required = sorted({m for s in config["sections"] if not s.get("sparse") for m in s["metrics"]})
     daily = run_query(metrics, ["metric_time__day"], today - timedelta(days=LOOKBACK_DAYS), today)
     days_with_data = {m: {_day(r["metric_time__day"]) for r in daily if r.get(m) not in (None, "")} for m in metrics}
 
-    missing = [m for m, days in days_with_data.items() if not days]
+    missing = [m for m in required if not days_with_data[m]]
     if missing:
         raise ReportError(f"no data in the last {LOOKBACK_DAYS} days for {', '.join(missing)}")
 
-    current, prior = choose_window({m: max(days) for m, days in days_with_data.items()})
+    current, prior = choose_window({m: max(days_with_data[m]) for m in required})
     for label, (start, end) in (("current", current), ("prior", prior)):
-        week = {start + timedelta(d) for d in range(7)}
-        short = [f"{m} ({len(week & days)} of 7 days)" for m, days in days_with_data.items() if len(week & days) < 7]
+        week = _week(start)
+        short = [f"{m} ({len(week & days_with_data[m])} of 7 days)" for m in required
+                 if len(week & days_with_data[m]) < 7]
         if short:
             raise ReportError(f"{label} week {start} to {end} is incomplete: {', '.join(short)}")
-    return current, prior
+    return current, prior, days_with_data
+
+
+def _week(start: date) -> set[date]:
+    return {start + timedelta(d) for d in range(7)}
 
 
 def section_rows(section: dict, rows: list[dict[str, str]], period: str, week: tuple[date, date],
-                 run_id: str, generated_at: str) -> list[dict]:
+                 run_id: str, generated_at: str, days_with_data: dict[str, int]) -> list[dict]:
     group_by = section["group_by"]
     key = group_by[0] if group_by else None
     label = group_by[1] if len(group_by) > 1 else key
@@ -125,28 +137,33 @@ def section_rows(section: dict, rows: list[dict[str, str]], period: str, week: t
                 "dimension_value": row.get(key) if key else None,
                 "dimension_label": row.get(label) if label else None,
                 "value": float(value) if value not in (None, "") else None,
+                "days_with_data": days_with_data[metric],
                 "data_status": "provisional",
             })
     return out
 
 
 def generate(config: dict, run_query: RunQuery, today: date, run_id: str, now: datetime) -> list[dict]:
-    current, prior = find_window(config, run_query, today)
+    current, prior, days_with_data = find_window(config, run_query, today)
     rows = []
     for period, week in (("current", current), ("prior", prior)):
+        coverage = {m: len(_week(week[0]) & days) for m, days in days_with_data.items()}
         for section in config["sections"]:
             result = run_query(section["metrics"], section["group_by"], week[0], week[1],
                                order=section.get("order"), limit=section.get("limit"))
             if not result:
+                if section.get("sparse"):
+                    continue
                 raise ReportError(f"section {section['name']} returned no rows for the {period} week")
-            rows += section_rows(section, result, period, week, run_id, now.isoformat())
+            rows += section_rows(section, result, period, week, run_id, now.isoformat(), coverage)
     return rows
 
 
 SCHEMA = [
     ("run_id", "STRING"), ("generated_at", "TIMESTAMP"), ("period", "STRING"), ("week_start", "DATE"),
     ("week_end", "DATE"), ("section", "STRING"), ("metric", "STRING"), ("dimension_name", "STRING"),
-    ("dimension_value", "STRING"), ("dimension_label", "STRING"), ("value", "FLOAT64"), ("data_status", "STRING"),
+    ("dimension_value", "STRING"), ("dimension_label", "STRING"), ("value", "FLOAT64"),
+    ("days_with_data", "INT64"), ("data_status", "STRING"),
 ]
 
 
