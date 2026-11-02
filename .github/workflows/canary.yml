@@ -1,4 +1,4 @@
-name: Weekly metrics
+name: Metric canary and weekly report
 
 # Runs when the YouTube pipeline's weekly refresh finishes (the pipeline sends a
 # repository_dispatch event of type youtube-refresh-complete), with a Monday cron as the
@@ -40,7 +40,7 @@ jobs:
           skip=false
           if [ "${{ github.event_name }}" = "schedule" ]; then
             since=$(date -u -d '4 days ago' +%Y-%m-%dT%H:%M:%SZ)
-            count=$(gh api "repos/${{ github.repository }}/actions/workflows/weekly-metrics.yml/runs?event=repository_dispatch&status=success&created=>=$since" --jq '.total_count')
+            count=$(gh api "repos/${{ github.repository }}/actions/workflows/canary.yml/runs?event=repository_dispatch&status=success&created=>=$since" --jq '.total_count')
             if [ "$count" -gt 0 ]; then skip=true; fi
           fi
           echo "skip=$skip" >> "$GITHUB_OUTPUT"

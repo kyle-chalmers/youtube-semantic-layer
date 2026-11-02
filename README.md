@@ -87,7 +87,7 @@ scripts/build_glossary.py   writes docs/metrics.md from the semantic manifest
 docs/metrics.md             the metric glossary agents read
 AGENTS.md, .claude/skills/query-metrics/   the rule and skill that point agents at mf
 ci/profiles.yml              dbt profile for GitHub Actions (keyless auth)
-.github/workflows/          weekly-metrics.yml (canary, then report)
+.github/workflows/          canary.yml (canary, then report)
 report/                     report.json (which mf queries) and weekly_report.py
 canary/
   canary.json        which metrics, grain and months the canary pins
@@ -106,7 +106,7 @@ python canary/check_metrics.py   # exit 0: every number matches; 1: a number mov
 
 ## Scheduled runs on GitHub Actions
 
-One workflow, `.github/workflows/weekly-metrics.yml`, runs on GitHub's free runners for public repos, with no dbt platform account and no stored key:
+One workflow, `.github/workflows/canary.yml`, runs on GitHub's free runners for public repos, with no dbt platform account and no stored key:
 
 | Trigger | When |
 |---|---|
@@ -119,7 +119,7 @@ One workflow, `.github/workflows/weekly-metrics.yml`, runs on GitHub's free runn
 | canary | unit tests, `dbt build`, `mf validate-configs`, glossary check, `check_metrics.py --quiet --record` | `canary_runs` (one row per metric and month, every run), `canary_baseline` (approved.csv) |
 | report (after canary, even if a number moved) | `dbt parse`, `report/weekly_report.py` (only `mf query` output) | `weekly_channel_report` (the latest complete week and the week before, per section, marked provisional) |
 
-To send the trigger from another system, POST to `https://api.github.com/repos/<owner>/youtube-semantic-layer/dispatches` with body `{"event_type": "youtube-refresh-complete"}` and a token that has this repository's Contents read and write permission.
+To send the trigger from another system, POST to `https://api.github.com/repos/<owner>/youtube-semantic-layer/dispatches` with body `{"event_type": "youtube-refresh-complete"}` and a fine-grained personal access token limited to this repository with Contents: write, the minimum GitHub lists for that endpoint (https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens).
 
 Logs on a public repo are public, so neither workflow prints a metric value: a failed canary names the metric and month, and the numbers are in `canary_runs`. Turn on **Settings > Notifications > Actions > Only notify for failed workflows** to get the failure email. GitHub pauses schedules on a public repo after 60 days without activity.
 
