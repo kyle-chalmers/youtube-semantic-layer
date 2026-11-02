@@ -124,6 +124,8 @@ PROJECT_ID=your-gcp-project-id
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
 REPO=your-github-user/youtube-semantic-layer
 
+gcloud services enable iam.googleapis.com iamcredentials.googleapis.com sts.googleapis.com \
+  cloudresourcemanager.googleapis.com --project=$PROJECT_ID
 gcloud iam workload-identity-pools create github --project=$PROJECT_ID --location=global
 gcloud iam workload-identity-pools providers create-oidc github-repo --project=$PROJECT_ID \
   --location=global --workload-identity-pool=github \
@@ -132,15 +134,29 @@ gcloud iam workload-identity-pools providers create-oidc github-repo --project=$
   --attribute-condition="assertion.repository == '$REPO'"
 
 PRINCIPAL=principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$REPO
-gcloud projects add-iam-policy-binding $PROJECT_ID --member=$PRINCIPAL --role=roles/bigquery.jobUser
-bq add-iam-policy-binding --member=$PRINCIPAL --role=roles/bigquery.dataViewer $PROJECT_ID:youtube_analytics
-bq add-iam-policy-binding --member=$PRINCIPAL --role=roles/bigquery.dataEditor $PROJECT_ID:dbt_semantic_layer
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=$PRINCIPAL --role=roles/bigquery.jobUser --condition=None
 
 gh variable set GCP_PROJECT_ID --body $PROJECT_ID
 gh variable set GCP_WIF_PROVIDER --body projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/providers/github-repo
 ```
 
-The attribute condition limits the pool to this one repository. The three roles let the workflows run queries, read the pipeline's tables and write only the dbt dataset.
+Dataset access goes on each dataset's access list. `bq add-iam-policy-binding --dataset` needs allowlisting on most projects, so append the entries with the BigQuery client (it keeps the existing entries):
+
+```bash
+PROJECT_ID=$PROJECT_ID PRINCIPAL=$PRINCIPAL python - <<'PY'
+import os
+from google.cloud import bigquery
+client = bigquery.Client(project=os.environ["PROJECT_ID"])
+for name, role in (("youtube_analytics", "READER"), ("dbt_semantic_layer", "WRITER")):
+    dataset = client.get_dataset(f"{client.project}.{name}")
+    entries = list(dataset.access_entries)
+    entries.append(bigquery.AccessEntry(role=role, entity_type="iamMember", entity_id=os.environ["PRINCIPAL"]))
+    dataset.access_entries = entries
+    client.update_dataset(dataset, ["access_entries"])
+PY
+```
+
+The attribute condition limits the pool to this one repository. READER is Data Viewer and WRITER is Data Editor, so the workflows can run queries, read the pipeline's tables and write only the dbt dataset.
 
 ## Settled months
 
