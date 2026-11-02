@@ -59,16 +59,24 @@ def _video_dimensions(manifest: dict) -> list[str]:
 
 def _model_dimensions(model: dict) -> list[str]:
     entity = _primary_entity(model)
+    if entity is None:
+        raise GlossaryError(f"semantic model {model['name']} has no primary entity, so its dimensions have no mf prefix")
     return [f"{entity}__{d['name']}" for d in model.get("dimensions", []) if d["type"] != "time"]
 
 
-def _formula(metric: dict) -> str:
+def _formula(metric: dict, by_measure: dict[str, dict]) -> str:
     params = metric["type_params"]
     if metric["type"] == "ratio":
         return f"{params['numerator']['name']} / {params['denominator']['name']}"
     if metric["type"] == "derived":
         return params["expr"]
-    return f"sum of measure `{params['measure']['name']}`" if params.get("measure") else metric["type"]
+    if not params.get("measure"):
+        return metric["type"]
+    name = params["measure"]["name"]
+    measure = next((m for m in by_measure[name].get("measures", []) if m["name"] == name), {})
+    if measure.get("non_additive_dimension"):
+        return f"measure `{name}` at the latest snapshot in each period, summed across videos"
+    return f"sum of measure `{name}`"
 
 
 def _metric(manifest: dict, name: str) -> dict:
@@ -97,7 +105,7 @@ def metric_section(manifest: dict, name: str) -> str:
         "",
         metric["description"],
         "",
-        f"- **Type:** {metric['type']} ({_formula(metric)})",
+        f"- **Type:** {metric['type']} ({_formula(metric, by_measure)})",
         f"- **Source:** `{meta.get('source', 'unknown')}`",
         f"- **Data starts:** {meta['coverage_start']}",
         f"- **Group by:** {', '.join(f'`{d}`' for d in dims)}",

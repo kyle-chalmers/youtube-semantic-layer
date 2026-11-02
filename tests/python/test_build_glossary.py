@@ -106,3 +106,20 @@ def test_check_mode(manifest, tmp_path):
 
 def test_missing_manifest_exits_2(tmp_path):
     assert build_glossary.main(["--manifest", str(tmp_path / "nope.json"), "--out", str(tmp_path / "m.md")]) == 2
+
+
+def test_model_without_primary_entity_is_an_error(manifest):
+    traffic = next(sm for sm in manifest["semantic_models"] if sm["name"] == "video_traffic_days")
+    traffic["entities"] = [e for e in traffic["entities"] if e["type"] != "primary"]
+    with pytest.raises(build_glossary.GlossaryError, match="video_traffic_days"):
+        build_glossary.metric_section(manifest, "total_views")
+
+
+def test_semi_additive_measure_formula_says_latest_snapshot(manifest):
+    manifest["semantic_models"].append(
+        model("snapshots", "snapshot", [("snapshot_date", "time")], ["lifetime_views"]))
+    manifest["semantic_models"][-1]["measures"][0]["non_additive_dimension"] = {
+        "name": "snapshot_date", "window_choice": "max"}
+    manifest["metrics"].append(metric("lifetime_views", "simple", ["lifetime_views"], measure={"name": "lifetime_views"}))
+    section = build_glossary.metric_section(manifest, "lifetime_views")
+    assert "latest snapshot" in section and "sum of measure" not in section

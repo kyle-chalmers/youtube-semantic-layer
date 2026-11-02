@@ -27,9 +27,9 @@ Likes, comments, shares, subscribers and playlist adds per Pacific day, video, s
 
 ### `like_rate`: Like Rate
 
-Likes divided by views. Not additive; recomputed from the two totals.
+Likes divided by views. Not additive; recomputed from the two totals. Null when a group has no views.
 
-- **Type:** derived (total_likes / total_views)
+- **Type:** ratio (total_likes / total_views)
 - **Source:** `reporting_channel_basic_a3, reporting_channel_combined_a3`
 - **Data starts:** 2026-08-06
 - **Group by:** `metric_time`, `video`, `video__title`, `video__video_type`, `video__published_date`, `video__duration_seconds`
@@ -256,7 +256,7 @@ Lifetime view, like and comment counts per video per snapshot date (Data API), f
 
 Lifetime comment count at the latest snapshot in the period. Running total.
 
-- **Type:** simple (sum of measure `lifetime_comments`)
+- **Type:** simple (measure `lifetime_comments` at the latest snapshot in each period, summed across videos)
 - **Source:** `daily_video_stats`
 - **Data starts:** 2026-02-17
 - **Group by:** `metric_time`, `video`, `video__title`, `video__video_type`, `video__published_date`, `video__duration_seconds`
@@ -265,7 +265,7 @@ Lifetime comment count at the latest snapshot in the period. Running total.
 
 Lifetime like count at the latest snapshot in the period. Running total.
 
-- **Type:** simple (sum of measure `lifetime_likes`)
+- **Type:** simple (measure `lifetime_likes` at the latest snapshot in each period, summed across videos)
 - **Source:** `daily_video_stats`
 - **Data starts:** 2026-02-17
 - **Group by:** `metric_time`, `video`, `video__title`, `video__video_type`, `video__published_date`, `video__duration_seconds`
@@ -274,7 +274,7 @@ Lifetime like count at the latest snapshot in the period. Running total.
 
 Lifetime view count from the Data API at the latest snapshot in the period. Running total: compare snapshots, never add across days. Data API timing, not Pacific days.
 
-- **Type:** simple (sum of measure `lifetime_views`)
+- **Type:** simple (measure `lifetime_views` at the latest snapshot in each period, summed across videos)
 - **Source:** `daily_video_stats`
 - **Data starts:** 2026-02-17
 - **Group by:** `metric_time`, `video`, `video__title`, `video__video_type`, `video__published_date`, `video__duration_seconds`
