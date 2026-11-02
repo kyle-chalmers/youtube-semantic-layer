@@ -141,13 +141,11 @@ metrics:
       source: reporting_channel_basic_a3
 - name: like_rate
   label: Like Rate
-  description: Likes divided by views. Not additive; recomputed from the two totals.
-  type: derived
+  description: Likes divided by views. Not additive; recomputed from the two totals. Null when a group has no views.
+  type: ratio
   type_params:
-    expr: total_likes / total_views
-    metrics:
-    - name: total_likes
-    - name: total_views
+    numerator: total_likes
+    denominator: total_views
   config:
     meta:
       coverage_start: '2026-08-06'
