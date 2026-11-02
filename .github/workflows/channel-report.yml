@@ -1,0 +1,45 @@
+name: Weekly channel report
+
+# Mondays, 30 minutes after the canary rebuilds the models. Every number comes from mf query and
+# is appended to BigQuery (weekly_channel_report); the log shows only row counts.
+on:
+  schedule:
+    - cron: "47 6 * * 1"
+      timezone: America/Phoenix
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: channel-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DBT_PROFILES_DIR: ci
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+
+      - name: Parse the project (mf reads target/semantic_manifest.json)
+        run: dbt parse --quiet
+
+      - name: Build and load the report
+        run: python report/weekly_report.py

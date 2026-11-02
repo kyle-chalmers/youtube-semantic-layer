@@ -1,0 +1,39 @@
+{
+  "table": "weekly_channel_report",
+  "sections": [
+    {
+      "name": "channel_totals",
+      "metrics": ["total_views", "total_engaged_views", "total_minutes_watched", "avg_view_duration_seconds",
+                  "subscribers_gained", "subscribers_lost", "net_subscribers", "total_likes", "total_shares",
+                  "total_impressions", "impressions_ctr"],
+      "group_by": []
+    },
+    {
+      "name": "top_videos",
+      "metrics": ["total_views"],
+      "group_by": ["video", "video__title"],
+      "order": "-total_views",
+      "limit": 10
+    },
+    {
+      "name": "views_by_traffic_source",
+      "metrics": ["total_views"],
+      "group_by": ["video_traffic_day__traffic_source"]
+    },
+    {
+      "name": "ctr_by_traffic_source",
+      "metrics": ["impressions_ctr", "total_impressions"],
+      "group_by": ["video_reach_day__traffic_source"]
+    },
+    {
+      "name": "views_by_device",
+      "metrics": ["total_views"],
+      "group_by": ["video_traffic_day__device_type"]
+    },
+    {
+      "name": "estimated_views_by_age",
+      "metrics": ["estimated_demographic_views"],
+      "group_by": ["video_demographic_day__age_group"]
+    }
+  ]
+}

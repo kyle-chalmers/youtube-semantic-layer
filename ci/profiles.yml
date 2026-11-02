@@ -1,0 +1,14 @@
+# dbt profile for GitHub Actions. google-github-actions/auth writes keyless Workload Identity
+# Federation credentials that application-default auth (method: oauth) picks up. No values here
+# are secret; the project comes from the GCP_PROJECT_ID repository variable.
+youtube_semantic_layer:
+  target: ci
+  outputs:
+    ci:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: "{{ env_var('DBT_DATASET', 'dbt_semantic_layer') }}"
+      location: us-central1
+      threads: 4
+      job_execution_timeout_seconds: 300
