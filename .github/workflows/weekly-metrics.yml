@@ -1,0 +1,110 @@
+name: Weekly metrics
+
+# Runs when the YouTube pipeline's weekly refresh finishes (the pipeline sends a
+# repository_dispatch event of type youtube-refresh-complete), with a Monday cron as the
+# fallback and a manual button. The canary runs first, then the channel report.
+# Logs never show metric values (this repo is public); results go to BigQuery:
+# canary_runs, canary_baseline and weekly_channel_report in dbt_semantic_layer.
+on:
+  repository_dispatch:
+    types: [youtube-refresh-complete]
+  schedule:
+    - cron: "17 6 * * 1"
+      timezone: America/Phoenix
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
+
+concurrency:
+  group: weekly-metrics
+  cancel-in-progress: false
+
+env:
+  DBT_PROFILES_DIR: ci
+  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+
+jobs:
+  # The cron is a fallback: skip it when a refresh-triggered run already succeeded this week.
+  fallback-check:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip=false
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            since=$(date -u -d '4 days ago' +%Y-%m-%dT%H:%M:%SZ)
+            count=$(gh api "repos/${{ github.repository }}/actions/workflows/weekly-metrics.yml/runs?event=repository_dispatch&status=success&created=>=$since" --jq '.total_count')
+            if [ "$count" -gt 0 ]; then skip=true; fi
+          fi
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+          echo "Skip fallback run: $skip"
+
+  canary:
+    needs: fallback-check
+    if: needs.fallback-check.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Unit tests
+        run: python -m pytest tests/python -q
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+
+      - name: Build models and run data tests
+        run: dbt build --quiet
+
+      - name: Validate metrics
+        run: mf validate-configs
+
+      - name: Glossary is current
+        run: python scripts/build_glossary.py --check
+
+      - name: Canary
+        run: python canary/check_metrics.py --quiet --record
+
+  report:
+    needs: canary
+    # Runs after the canary even when a number moved: the report is still the week's numbers,
+    # and the canary failure is the alert. Skipped only when the canary job was skipped.
+    if: ${{ !cancelled() && needs.canary.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+
+      - name: Parse the project (mf reads target/semantic_manifest.json)
+        run: dbt parse --quiet
+
+      - name: Build and load the report
+        run: python report/weekly_report.py
