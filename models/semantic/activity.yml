@@ -1,0 +1,152 @@
+semantic_models:
+  - name: video_activity_days
+    description: "Likes, comments, shares, subscribers and playlist adds per Pacific day, video, subscribed status and country (Reporting API basic report). Complete from 2026-08-06."
+    model: ref('fct_video_activity_days')
+    defaults:
+      agg_time_dimension: report_date
+    entities:
+      - name: video_activity_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: report_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: attribution
+        type: categorical
+        description: "video, or channel for activity YouTube does not tie to a video. About a third of subscribers gained are channel-level. Filter to video for per-video rankings."
+      - name: subscribed_status
+        type: categorical
+      - name: country_code
+        type: categorical
+    measures:
+      - name: likes
+        agg: sum
+      - name: dislikes
+        agg: sum
+      - name: comments
+        agg: sum
+      - name: shares
+        agg: sum
+      - name: subscribers_gained
+        agg: sum
+      - name: subscribers_lost
+        agg: sum
+      - name: playlist_adds
+        agg: sum
+        expr: videos_added_to_playlists
+      - name: playlist_removes
+        agg: sum
+        expr: videos_removed_from_playlists
+
+metrics:
+- name: total_likes
+  label: Likes
+  description: Likes (Reporting API). Additive.
+  type: simple
+  type_params:
+    measure: likes
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3
+- name: total_dislikes
+  label: Dislikes
+  description: Dislikes (Reporting API). Additive.
+  type: simple
+  type_params:
+    measure: dislikes
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3
+- name: total_comments
+  label: Comments
+  description: Comments (Reporting API). Additive.
+  type: simple
+  type_params:
+    measure: comments
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3
+- name: total_shares
+  label: Shares
+  description: Shares (Reporting API basic report). Additive. For a breakdown by service use shares_by_service.
+  type: simple
+  type_params:
+    measure: shares
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3
+- name: subscribers_gained
+  label: Subscribers Gained
+  description: Subscribers gained (Reporting API), including channel-level gains not tied to a video (attribution
+    = channel, about a third). Filter attribution = video to rank videos. Additive.
+  type: simple
+  type_params:
+    measure: subscribers_gained
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3
+- name: subscribers_lost
+  label: Subscribers Lost
+  description: Subscribers lost (Reporting API), including channel-level losses (attribution = channel).
+    Additive.
+  type: simple
+  type_params:
+    measure: subscribers_lost
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3
+- name: net_subscribers
+  label: Net Subscribers
+  description: Subscribers gained minus subscribers lost.
+  type: derived
+  type_params:
+    expr: subscribers_gained - subscribers_lost
+    metrics:
+    - name: subscribers_gained
+    - name: subscribers_lost
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3
+- name: playlist_adds
+  label: Playlist Adds
+  description: Times a video was added to a playlist. Additive.
+  type: simple
+  type_params:
+    measure: playlist_adds
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3
+- name: playlist_removes
+  label: Playlist Removes
+  description: Times a video was removed from a playlist. Additive.
+  type: simple
+  type_params:
+    measure: playlist_removes
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3
+- name: like_rate
+  label: Like Rate
+  description: Likes divided by views. Not additive; recomputed from the two totals. Null when a group has no views.
+  type: ratio
+  type_params:
+    numerator: total_likes
+    denominator: total_views
+  config:
+    meta:
+      coverage_start: '2026-08-06'
+      source: reporting_channel_basic_a3, reporting_channel_combined_a3

@@ -4,8 +4,32 @@ sources:
   - name: youtube
     database: "{{ env_var('YOUTUBE_SOURCE_PROJECT', target.database) }}"
     schema: "{{ env_var('YOUTUBE_SOURCE_DATASET', 'youtube_analytics') }}"
+    description: >
+      Tables written by youtube-bigquery-pipeline. Analytics API tables are rewritten weekly for
+      activity dates 6 to 35 days old. Reporting API tables replace a day's partition whenever
+      YouTube issues a newer version of that day's report, up to about 36 days later.
     tables:
       - name: daily_video_analytics
-        description: One row per video per activity day from the YouTube Analytics API, refreshed weekly.
+        description: Analytics API, one row per video per activity day. Minutes are truncated to whole minutes per row.
+      - name: daily_traffic_sources
+        description: Analytics API, one row per video per activity day per traffic source. Holds true views.
+      - name: daily_video_stats
+        description: Data API lifetime counters, one row per video per snapshot date.
       - name: video_metadata
-        description: Video attributes from the YouTube Data API, one row per video per snapshot date.
+        description: Data API video attributes, one row per video per snapshot date.
+      - name: reporting_channel_basic_a3
+        description: Reporting API, per video per Pacific day per subscribed status per country. Rows with no video are channel-level activity.
+      - name: reporting_channel_combined_a3
+        description: Reporting API, basic grain plus playback location, traffic source, device and operating system.
+      - name: reporting_channel_traffic_source_a3
+        description: Reporting API, basic grain plus traffic source and traffic source detail (search term, referring video or site).
+      - name: reporting_channel_reach_combined_a1
+        description: Reporting API thumbnail impressions and impressions CTR (a fraction), per video per day per traffic source, detail, OS and device.
+      - name: reporting_channel_demographics_a1
+        description: Reporting API share of logged-in views by age group and gender. views_percentage sums to 100 per video per day.
+      - name: reporting_channel_cards_a1
+        description: Reporting API card and card teaser impressions and clicks per card.
+      - name: reporting_channel_end_screens_a1
+        description: Reporting API end screen element impressions and clicks.
+      - name: reporting_channel_sharing_service_a1
+        description: Reporting API shares per sharing service.

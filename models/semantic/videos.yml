@@ -1,0 +1,20 @@
+semantic_models:
+  - name: videos
+    description: "One row per video (latest metadata snapshot). Every fact joins here through the video entity, so any metric can be grouped by video__title or video__video_type."
+    model: ref('dim_videos')
+    entities:
+      - name: video
+        type: primary
+        expr: video_id
+    dimensions:
+      - name: title
+        type: categorical
+      - name: video_type
+        type: categorical
+        description: "full_length or short."
+      - name: published_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: duration_seconds
+        type: categorical

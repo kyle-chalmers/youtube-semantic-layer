@@ -1,7 +1,22 @@
 {
-  "metrics": ["avg_view_duration_seconds", "total_seconds_watched", "total_views"],
+  "metrics": [
+    "avg_view_duration_seconds",
+    "impressions_ctr",
+    "total_comments",
+    "total_engaged_views",
+    "total_impressions",
+    "total_likes",
+    "total_minutes_watched",
+    "total_seconds_watched",
+    "total_shares",
+    "total_views",
+    "subscribers_gained",
+    "subscribers_lost",
+    "analytics_minutes_watched",
+    "analytics_views"
+  ],
   "group_by": "metric_time__month",
-  "start_time": "2026-07-01",
+  "start_time": "2026-08-01",
   "end_time": "2026-08-31",
-  "decimals": 2
+  "decimals": 4
 }

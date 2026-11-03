@@ -14,16 +14,28 @@ Video walkthrough: [Kyle Chalmers Data Plus AI on YouTube](https://www.youtube.c
 
 ## Data
 
-The source tables come from the [youtube-bigquery-pipeline](https://github.com/kyle-chalmers/youtube-bigquery-pipeline) project:
+The source tables come from the [youtube-bigquery-pipeline](https://github.com/kyle-chalmers/youtube-bigquery-pipeline) project. Two YouTube APIs feed it, and each metric reads from exactly one source:
 
-| Table | Grain |
-|---|---|
-| `daily_video_analytics` | one row per video per activity day |
-| `video_metadata` | one row per video per snapshot date (staging keeps the latest) |
+| Source | Tables modeled | Grain | Coverage | Used for |
+|---|---|---|---|---|
+| Reporting API | `reporting_channel_combined_a3` | video, Pacific day, subscribed status, country, traffic source, device, OS, playback location | 2026-08-06 on | views, engaged views, watch time, average view duration |
+| Reporting API | `reporting_channel_basic_a3` | video, day, subscribed status, country (plus channel-level rows with no video) | 2026-08-06 on | likes, comments, shares, subscribers |
+| Reporting API | `reporting_channel_reach_combined_a1` | video, day, traffic source, detail, device, OS | 2026-08-06 on | impressions, impressions CTR |
+| Reporting API | `traffic_source_a3`, `demographics_a1`, `cards_a1`, `end_screens_a1`, `sharing_service_a1` | per report | 2026-08-06 on | traffic detail, demographic estimates, cards, end screens, shares by service |
+| Analytics API | `daily_video_analytics`, `daily_traffic_sources` | video, day (and traffic source) | 2025-10-16 on | `analytics_*` history metrics |
+| Data API | `daily_video_stats`, `video_metadata` | video, snapshot date | 2026-02-17 on | lifetime counters, the video dimension |
 
-The analytics table stores minutes watched and average view duration but not views, so `stg_daily_video_analytics` reconstructs views as `minutes watched * 60 / average view duration`. Days with an average view duration of 0 get null views.
+Every fact joins one `videos` dimension, so any metric can be grouped by `video__title` or `video__video_type`. `models/semantic/` holds 37 metrics; each one's description says what it means, which table it reads, when its data starts, and whether it adds up.
 
-Using your own data: point `models/staging/_sources.yml` at any table with a video id, a date, minutes watched and average view duration.
+Things that trip people up:
+
+- **Views versus engaged views.** YouTube computes average view duration over *engaged* views, so watch time divided by average view duration gives roughly engaged views, not views (less than half of all views on a Shorts-heavy channel). `total_views` reads views straight from the Reporting API, and `avg_view_duration_seconds` divides watch time by engaged views.
+- **Impressions cover six surfaces only** (search, suggested, browse, channel page and two playlist surfaces). Never divide views by impressions; use `impressions_ctr`.
+- **Channel-level rows.** About a third of subscribers gained are not tied to a video. They count in channel totals; filter `attribution = 'video'` to rank videos.
+- **Demographics are estimates.** YouTube only gives each age and gender group's share of a video-day's logged-in views.
+- **Recent days move.** Reporting reissues a day's report for up to about five weeks, and the pipeline rewrites Analytics days 6 to 35 days old every week.
+
+Using your own data: point `models/staging/_sources.yml` at your own pipeline's tables, or keep only the models you have sources for.
 
 ## Setup
 
@@ -39,7 +51,7 @@ mf validate-configs
 Query a metric:
 
 ```bash
-mf query --metrics avg_view_duration_seconds --group-by metric_time__month --start-time 2026-09-01 --end-time 2026-09-30
+mf query --metrics total_views,impressions_ctr --group-by metric_time__month,video__video_type --start-time 2026-09-01 --end-time 2026-09-30
 ```
 
 ## Metric canary skill
@@ -49,15 +61,17 @@ mf query --metrics avg_view_duration_seconds --group-by metric_time__month --sta
 ## Project layout
 
 ```
+seeds/reporting_codes.csv   code to name lookup for Reporting API dimensions
 models/
-  staging/     stg_daily_video_analytics, stg_video_metadata, metricflow_time_spine
-  marts/       fct_video_days (one row per video per day, with video type)
-  semantic/    semantic_models.yml, metrics.yml
+  staging/     one view per source table; Reporting tables start at var reporting_complete_from
+  marts/       dim_videos plus one fact per report, each with a unique row_key
+  semantic/    semantic models and metrics, one file per group (traffic, activity, reach, audience, engagement, lifetime, analytics_history)
+tests/         singular data tests (code lookup, demographic shares, CTR range)
 canary/
   canary.json        which metrics, grain and months the canary pins
-  approved.csv       the reconciled answer for July and August 2026
+  approved.csv       the reconciled answer for the pinned months
   check_metrics.py   re-runs mf query and compares it to approved.csv
-  sql/               settled_months.sql (how far back each refresh rewrites)
+  sql/               settled_months.sql, plus reconcile_core.sql and reconcile_extended.sql (independent checks on the source tables)
 .claude/skills/metricflow-canary/   the Claude Code skill that builds the canary
 ```
 

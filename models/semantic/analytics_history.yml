@@ -1,0 +1,110 @@
+semantic_models:
+  - name: video_days
+    description: "Analytics API history per video per activity day, from 2025-10-16. Minutes are truncated to whole minutes per row (about 2% below Reporting). Use for periods before 2026-08-06."
+    model: ref('fct_video_days')
+    defaults:
+      agg_time_dimension: activity_date
+    entities:
+      - name: video_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: activity_date
+        type: time
+        type_params:
+          time_granularity: day
+    measures:
+      - name: analytics_minutes_watched
+        agg: sum
+        expr: estimated_minutes_watched
+      - name: analytics_subscribers_gained
+        agg: sum
+        expr: subscribers_gained
+      - name: analytics_subscribers_lost
+        agg: sum
+        expr: subscribers_lost
+      - name: analytics_shares
+        agg: sum
+        expr: shares
+
+  - name: analytics_traffic_days
+    description: "Analytics API history: views per video per activity day per traffic source, from 2025-10-16."
+    model: ref('fct_analytics_traffic_days')
+    defaults:
+      agg_time_dimension: activity_date
+    entities:
+      - name: analytics_traffic_day
+        type: primary
+        expr: row_key
+      - name: video
+        type: foreign
+        expr: video_id
+    dimensions:
+      - name: activity_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: analytics_traffic_source
+        type: categorical
+        description: "Analytics API traffic source enum (YT_SEARCH, SHORTS, SUBSCRIBER, EXT_URL, ...)."
+    measures:
+      - name: analytics_views
+        agg: sum
+        expr: views
+
+metrics:
+- name: analytics_views
+  label: Views (Analytics API history)
+  description: Views from the Analytics API traffic source table, back to 2025-10-16. Within 0.5% of total_views
+    where both exist. Use for periods before 2026-08-06.
+  type: simple
+  type_params:
+    measure: analytics_views
+  config:
+    meta:
+      coverage_start: '2025-10-16'
+      source: daily_traffic_sources
+- name: analytics_minutes_watched
+  label: Minutes Watched (Analytics API history)
+  description: Watch minutes from the Analytics API, back to 2025-10-16. Truncated to whole minutes per
+    video-day, so about 2% below total_minutes_watched. Use for periods before 2026-08-06.
+  type: simple
+  type_params:
+    measure: analytics_minutes_watched
+  config:
+    meta:
+      coverage_start: '2025-10-16'
+      source: daily_video_analytics
+- name: analytics_subscribers_gained
+  label: Subscribers Gained (Analytics API history)
+  description: Subscribers gained attributed to videos (no channel-level gains), back to 2025-10-16.
+  type: simple
+  type_params:
+    measure: analytics_subscribers_gained
+  config:
+    meta:
+      coverage_start: '2025-10-16'
+      source: daily_video_analytics
+- name: analytics_subscribers_lost
+  label: Subscribers Lost (Analytics API history)
+  description: Subscribers lost attributed to videos, back to 2025-10-16.
+  type: simple
+  type_params:
+    measure: analytics_subscribers_lost
+  config:
+    meta:
+      coverage_start: '2025-10-16'
+      source: daily_video_analytics
+- name: analytics_shares
+  label: Shares (Analytics API history)
+  description: Shares, back to 2025-10-16.
+  type: simple
+  type_params:
+    measure: analytics_shares
+  config:
+    meta:
+      coverage_start: '2025-10-16'
+      source: daily_video_analytics

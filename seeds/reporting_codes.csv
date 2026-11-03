@@ -1,0 +1,131 @@
+dimension,code,name
+traffic_source_type,0,Direct or unknown
+traffic_source_type,1,YouTube advertising
+traffic_source_type,3,Browse features
+traffic_source_type,4,YouTube channel page
+traffic_source_type,5,YouTube search
+traffic_source_type,7,Suggested videos
+traffic_source_type,8,Other YouTube features
+traffic_source_type,9,External
+traffic_source_type,11,Video cards and annotations
+traffic_source_type,14,Playlists
+traffic_source_type,17,Notifications
+traffic_source_type,18,Playlist pages
+traffic_source_type,19,Claimed content programming
+traffic_source_type,20,End screens
+traffic_source_type,23,Stories
+traffic_source_type,24,Shorts feed
+traffic_source_type,25,Product pages
+traffic_source_type,26,Hashtag pages
+traffic_source_type,27,Sound pages
+traffic_source_type,28,Live redirect
+traffic_source_type,29,Podcasts
+traffic_source_type,30,Remixed video
+traffic_source_type,31,Vertical live feed
+traffic_source_type,32,Related video (Shorts content links)
+device_type,100,Unknown
+device_type,101,Computer
+device_type,102,TV
+device_type,103,Game console
+device_type,104,Mobile phone
+device_type,105,Tablet
+playback_location_type,0,YouTube watch page
+playback_location_type,1,Embedded on another site
+playback_location_type,2,YouTube channel page
+playback_location_type,5,Other
+playback_location_type,7,Browse features
+playback_location_type,8,YouTube search
+playback_location_type,10,Shorts feed
+operating_system,1,Other
+operating_system,2,Windows
+operating_system,3,Windows Mobile
+operating_system,4,Android
+operating_system,5,iOS
+operating_system,6,Symbian
+operating_system,7,Blackberry
+operating_system,9,Macintosh
+operating_system,10,PlayStation
+operating_system,11,Bada
+operating_system,12,WebOS
+operating_system,13,Linux
+operating_system,14,Hiptop
+operating_system,15,MeeGo
+operating_system,16,Wii
+operating_system,17,Xbox
+operating_system,18,PlayStation Vita
+operating_system,19,Smart TV
+operating_system,20,Nintendo 3DS
+operating_system,21,Chromecast
+operating_system,22,Tizen
+operating_system,23,Firefox
+operating_system,24,RealMedia
+operating_system,25,KaiOS
+operating_system,26,Roku
+operating_system,27,Nintendo Switch
+operating_system,28,Apple tvOS
+operating_system,29,Fire OS
+operating_system,30,ChromeOS
+operating_system,31,Vidaa
+operating_system,32,VegaOS
+card_type,0,Unknown
+card_type,60,Link
+card_type,61,Fundraising
+card_type,62,Video
+card_type,63,Playlist
+card_type,65,Fan funding
+card_type,66,Merchandise
+card_type,68,Associated website
+card_type,69,Channel
+end_screen_element_type,501,Video
+end_screen_element_type,502,Playlist
+end_screen_element_type,503,Website
+end_screen_element_type,504,Channel
+end_screen_element_type,505,Subscribe
+end_screen_element_type,506,Associated website
+end_screen_element_type,507,Crowdfunding
+end_screen_element_type,508,Merchandise
+end_screen_element_type,509,Recent upload
+end_screen_element_type,510,Best for viewer
+sharing_service,0,Unknown
+sharing_service,4,reddit
+sharing_service,10,Facebook
+sharing_service,31,Twitter
+sharing_service,40,tumblr
+sharing_service,42,LinkedIn
+sharing_service,44,Weibo
+sharing_service,45,Pinterest
+sharing_service,46,Email
+sharing_service,47,Facebook Messenger
+sharing_service,49,WhatsApp
+sharing_service,51,Gmail
+sharing_service,52,Kakao
+sharing_service,53,Other
+sharing_service,55,Copy to clipboard
+sharing_service,59,Embed
+sharing_service,60,Text message
+sharing_service,67,Line
+sharing_service,68,Viber
+sharing_service,70,Skype
+sharing_service,72,WeChat
+sharing_service,75,Telegram
+sharing_service,80,Nearby Share
+sharing_service,82,iOS system share sheet
+sharing_service,84,Android Messenger
+sharing_service,91,YouTube Community post
+sharing_service,96,Web system share dialog
+sharing_service,97,Snapchat
+sharing_service,99,Share to Snapchat camera
+sharing_service,100,Android system share dialog
+sharing_service,101,Save to device photos
+sharing_service,102,Instagram
+sharing_service,103,Direct system share dialog
+sharing_service,104,Discord
+sharing_service,105,Instagram Stories
+sharing_service,106,Facebook Stories
+sharing_service,108,Samsung Messages
+sharing_service,109,WhatsApp Business
+sharing_service,110,Samsung Notes
+sharing_service,111,Google Keep
+sharing_service,116,Google Chat
+sharing_service,118,Quick Share
+sharing_service,124,Google Chrome

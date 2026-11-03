@@ -1,3 +1,2 @@
-metric_time__month,avg_view_duration_seconds,total_seconds_watched,total_views
-2026-07-01,204.26,2151300.00,10532.25
-2026-08-01,222.78,2216340.00,9948.34
+metric_time__month,avg_view_duration_seconds,impressions_ctr,total_comments,total_engaged_views,total_impressions,total_likes,total_minutes_watched,total_seconds_watched,total_shares,total_views,subscribers_gained,subscribers_lost,analytics_minutes_watched,analytics_views
+2026-08-01,218.4586,0.0562,6.0000,8095.0000,74124.0000,144.0000,29473.7095,1768422.5720,94.0000,10863.0000,107.0000,13.0000,36939.0000,14474.0000
