@@ -13,7 +13,8 @@ M = cm.METRICS
 
 
 def row(period, value):
-    return {G: period, **{m: value for m in M}}
+    # Round like the canary does, so the tests follow canary.json's decimals.
+    return {G: period, **{m: cm.round_value(value) for m in M}}
 
 
 EXPECTED = [row("2026-09-01", "111.00")]
