@@ -10,6 +10,8 @@ Run from anywhere, with the project's environment active:
 
     python canary/check_metrics.py          # compare
     python canary/check_metrics.py --pin    # write approved.csv once, after reconciling
+    python canary/check_metrics.py --quiet --record   # scheduled runs: no values in the log,
+                                                      # results appended to BigQuery
 
 Exit codes:
     0  every row matches approved.csv
@@ -26,12 +28,14 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
+import uuid
 from decimal import InvalidOperation
 import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
@@ -174,8 +178,12 @@ def describe(row: dict[str, str] | None) -> str:
     return ", ".join(f"{m}={row[m] or 'null'}" for m in METRICS)
 
 
-def compare(expected: list[dict[str, str]], actual: list[dict[str, str]]) -> int:
-    """Print every row that differs and return how many did."""
+def compare(expected: list[dict[str, str]], actual: list[dict[str, str]], quiet: bool = False) -> int:
+    """Print every row that differs and return how many did.
+
+    quiet prints which period and metrics differ but never the values, for logs that are
+    public (GitHub Actions on a public repo). --record keeps the values in BigQuery.
+    """
     exp = {r[GROUP_BY]: r for r in expected}
     act = {r[GROUP_BY]: r for r in actual}
     mismatches = 0
@@ -189,10 +197,69 @@ def compare(expected: list[dict[str, str]], actual: list[dict[str, str]]) -> int
         else:
             differs = ", ".join(m for m in METRICS if e[m] != a[m])
         print(f"MISMATCH {GROUP_BY}={key}")
-        print(f"  expected: {describe(e)}")
-        print(f"  actual:   {describe(a)}")
+        if not quiet:
+            print(f"  expected: {describe(e)}")
+            print(f"  actual:   {describe(a)}")
         print(f"  differs:  {differs}")
     return mismatches
+
+
+def _number(value: str | None) -> float | None:
+    return float(value) if value not in (None, "") else None
+
+
+def record_rows(expected: list[dict[str, str]], actual: list[dict[str, str]],
+                run_id: str, ran_at: str, git_sha: str) -> list[dict]:
+    """One row per period and metric: what approved.csv holds, what mf returned, and the verdict."""
+    exp = {r[GROUP_BY]: r for r in expected}
+    act = {r[GROUP_BY]: r for r in actual}
+    rows = []
+    for key in sorted(exp.keys() | act.keys()):
+        e, a = exp.get(key), act.get(key)
+        for metric in METRICS:
+            if e is None:
+                status = "new"
+            elif a is None:
+                status = "missing"
+            else:
+                status = "match" if e[metric] == a[metric] else "differs"
+            rows.append({
+                "run_id": run_id, "ran_at": ran_at, "git_sha": git_sha, "period": key, "metric": metric,
+                "expected": _number(e[metric]) if e else None, "actual": _number(a[metric]) if a else None,
+                "status": status,
+            })
+    return rows
+
+
+def baseline_rows(expected: list[dict[str, str]]) -> list[dict]:
+    return [{"period": r[GROUP_BY], "metric": m, "value": _number(r[m])} for r in expected for m in METRICS]
+
+
+def git_sha() -> str:
+    if os.environ.get("GITHUB_SHA"):
+        return os.environ["GITHUB_SHA"]
+    result = subprocess.run(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, capture_output=True, text=True)
+    return result.stdout.strip() or "unknown"
+
+
+def load_to_bigquery(runs: list[dict], baseline: list[dict]) -> None:
+    """Append this run to canary_runs and replace canary_baseline with approved.csv."""
+    from google.cloud import bigquery  # installed with dbt-bigquery
+
+    client = bigquery.Client(project=os.environ.get("GCP_PROJECT_ID") or None)
+    dataset = f"{client.project}.{os.environ.get('CANARY_DATASET', 'dbt_semantic_layer')}"
+    jobs = [
+        (runs, "canary_runs", "WRITE_APPEND", [
+            ("run_id", "STRING"), ("ran_at", "TIMESTAMP"), ("git_sha", "STRING"), ("period", "STRING"),
+            ("metric", "STRING"), ("expected", "FLOAT64"), ("actual", "FLOAT64"), ("status", "STRING")]),
+        (baseline, "canary_baseline", "WRITE_TRUNCATE", [
+            ("period", "STRING"), ("metric", "STRING"), ("value", "FLOAT64")]),
+    ]
+    for rows, table, disposition, schema in jobs:
+        client.load_table_from_json(rows, f"{dataset}.{table}", job_config=bigquery.LoadJobConfig(
+            schema=[bigquery.SchemaField(n, t) for n, t in schema],
+            write_disposition=disposition, create_disposition="CREATE_IF_NEEDED",
+        )).result()
 
 
 def pin() -> int:
@@ -212,10 +279,13 @@ def pin() -> int:
     return 0
 
 
-def main() -> int:
+def main(argv: list[str] | None = None, loader=load_to_bigquery) -> int:
     parser = argparse.ArgumentParser(description="Compare pinned MetricFlow results to approved.csv.")
     parser.add_argument("--pin", action="store_true", help="write approved.csv once, after reconciling")
-    if parser.parse_args().pin:
+    parser.add_argument("--quiet", action="store_true", help="never print metric values (public logs)")
+    parser.add_argument("--record", action="store_true", help="append results to BigQuery canary_runs")
+    args = parser.parse_args(argv)
+    if args.pin:
         return pin()
     try:
         expected = read_approved()
@@ -224,8 +294,19 @@ def main() -> int:
         print(f"CANARY ERROR: {err}", file=sys.stderr)
         return 2
 
-    mismatches = compare(expected, actual)
+    mismatches = compare(expected, actual, quiet=args.quiet)
     total = len({r[GROUP_BY] for r in expected} | {r[GROUP_BY] for r in actual})
+
+    if args.record:
+        run_id = str(uuid.uuid4())
+        runs = record_rows(expected, actual, run_id, datetime.now(timezone.utc).isoformat(), git_sha())
+        try:
+            loader(runs, baseline_rows(expected))
+        except Exception as err:  # BigQuery client errors; their messages carry no metric values
+            print(f"CANARY ERROR: could not record run {run_id}: {type(err).__name__}: {err}", file=sys.stderr)
+            return 2
+        print(f"Recorded run {run_id} ({len(runs)} rows) to canary_runs.")
+
     if mismatches:
         print(f"Canary FAILED: {mismatches} of {total} rows differ from {APPROVED_CSV.name}.")
         return 1

@@ -86,10 +86,13 @@ tests/         singular data tests (code lookup, demographic shares, CTR range);
 scripts/build_glossary.py   writes docs/metrics.md from the semantic manifest
 docs/metrics.md             the metric glossary agents read
 AGENTS.md, .claude/skills/query-metrics/   the rule and skill that point agents at mf
+ci/profiles.yml              dbt profile for GitHub Actions (keyless auth)
+.github/workflows/          canary.yml (canary, then report)
+report/                     report.json (which mf queries) and weekly_report.py
 canary/
   canary.json        which metrics, grain and months the canary pins
   approved.csv       the reconciled answer for the pinned months
-  check_metrics.py   re-runs mf query and compares it to approved.csv
+  check_metrics.py   re-runs mf query and compares it to approved.csv (--quiet, --record for scheduled runs)
   sql/               settled_months.sql, plus reconcile_core.sql and reconcile_extended.sql (independent checks on the source tables)
 .claude/skills/metricflow-canary/   the Claude Code skill that builds the canary
 ```
@@ -100,6 +103,68 @@ canary/
 dbt build
 python canary/check_metrics.py   # exit 0: every number matches; 1: a number moved; 2: the check could not run
 ```
+
+## Scheduled runs on GitHub Actions
+
+One workflow, `.github/workflows/canary.yml`, runs on GitHub's free runners for public repos, with no dbt platform account and no stored key:
+
+| Trigger | When |
+|---|---|
+| `repository_dispatch` of type `youtube-refresh-complete` | as soon as the pipeline's weekly refresh finishes |
+| cron, Monday 06:17 America/Phoenix | fallback; skipped if a refresh-triggered run succeeded in the last 4 days |
+| Run workflow button | on demand |
+
+| Job | Steps | Writes to BigQuery |
+|---|---|---|
+| canary | unit tests, `dbt build`, `mf validate-configs`, glossary check, `check_metrics.py --quiet --record` | `canary_runs` (one row per metric and month, every run), `canary_baseline` (approved.csv) |
+| report (after canary, even if a number moved) | `dbt parse`, `report/weekly_report.py` (only `mf query` output) | `weekly_channel_report` (the latest complete week and the week before, per section, marked provisional, with the number of days each metric had data; sparse sections such as demographics never block the week) |
+
+To send the trigger from another system, POST to `https://api.github.com/repos/<owner>/youtube-semantic-layer/dispatches` with body `{"event_type": "youtube-refresh-complete"}` and a fine-grained personal access token limited to this repository with Contents: write, the minimum GitHub lists for that endpoint (https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens).
+
+Logs on a public repo are public, so neither workflow prints a metric value: a failed canary names the metric and month, and the numbers are in `canary_runs`. Turn on **Settings > Notifications > Actions > Only notify for failed workflows** to get the failure email. GitHub pauses schedules on a public repo after 60 days without activity.
+
+### One-time keyless auth (Workload Identity Federation)
+
+GitHub's OIDC token is exchanged for short-lived Google credentials, so no JSON key sits in GitHub. Run once with your own values (owner role or IAM admin needed):
+
+```bash
+PROJECT_ID=your-gcp-project-id
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+REPO=your-github-user/youtube-semantic-layer
+
+gcloud services enable iam.googleapis.com iamcredentials.googleapis.com sts.googleapis.com \
+  cloudresourcemanager.googleapis.com --project=$PROJECT_ID
+gcloud iam workload-identity-pools create github --project=$PROJECT_ID --location=global
+gcloud iam workload-identity-pools providers create-oidc github-repo --project=$PROJECT_ID \
+  --location=global --workload-identity-pool=github \
+  --issuer-uri=https://token.actions.githubusercontent.com \
+  --attribute-mapping=google.subject=assertion.sub,attribute.repository=assertion.repository \
+  --attribute-condition="assertion.repository == '$REPO'"
+
+PRINCIPAL=principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$REPO
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=$PRINCIPAL --role=roles/bigquery.jobUser --condition=None
+
+gh variable set GCP_PROJECT_ID --body $PROJECT_ID
+gh variable set GCP_WIF_PROVIDER --body projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/providers/github-repo
+```
+
+Dataset access goes on each dataset's access list. `bq add-iam-policy-binding --dataset` needs allowlisting on most projects, so append the entries with the BigQuery client (it keeps the existing entries):
+
+```bash
+PROJECT_ID=$PROJECT_ID PRINCIPAL=$PRINCIPAL python - <<'PY'
+import os
+from google.cloud import bigquery
+client = bigquery.Client(project=os.environ["PROJECT_ID"])
+for name, role in (("youtube_analytics", "READER"), ("dbt_semantic_layer", "WRITER")):
+    dataset = client.get_dataset(f"{client.project}.{name}")
+    entries = list(dataset.access_entries)
+    entries.append(bigquery.AccessEntry(role=role, entity_type="iamMember", entity_id=os.environ["PRINCIPAL"]))
+    dataset.access_entries = entries
+    client.update_dataset(dataset, ["access_entries"])
+PY
+```
+
+The attribute condition limits the pool to this one repository. READER is Data Viewer and WRITER is Data Editor, so the workflows can run queries, read the pipeline's tables and write only the dbt dataset.
 
 ## Settled months
 
