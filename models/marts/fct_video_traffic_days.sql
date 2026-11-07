@@ -16,3 +16,4 @@ select
     engaged_views,
     watch_time_minutes
 from {{ ref('stg_reporting_channel_combined') }}
+where video_id in (select video_id from {{ ref('dim_videos') }} where video_type = 'full_length')
