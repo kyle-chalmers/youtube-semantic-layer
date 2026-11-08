@@ -117,9 +117,11 @@ One workflow, `.github/workflows/canary.yml`, runs on GitHub's free runners for 
 | Job | Steps | Writes to BigQuery |
 |---|---|---|
 | canary | unit tests, `dbt build`, `mf validate-configs`, glossary check, `check_metrics.py --quiet --record` | `canary_runs` (one row per metric and month, every run), `canary_baseline` (approved.csv) |
-| report (after canary, even if a number moved) | `dbt parse`, `report/weekly_report.py` (only `mf query` output) | `weekly_channel_report` (the latest complete week and the week before, per section, marked provisional, with the number of days each metric had data; sparse sections such as demographics never block the week) |
+| report (only after a passing canary on main) | `dbt parse`, `report/weekly_report.py` (only `mf query` output) | `weekly_channel_report` (the latest complete week and the week before, per section, marked provisional, with the number of days each metric had data; sparse sections such as demographics never block the week) |
 
 To send the trigger from another system, POST to `https://api.github.com/repos/<owner>/youtube-semantic-layer/dispatches` with body `{"event_type": "youtube-refresh-complete"}` and a fine-grained personal access token limited to this repository with Contents: write, the minimum GitHub lists for that endpoint (https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens).
+
+A manual run from any branch other than main builds into `dbt_semantic_layer_ci` and skips the report, so testing a change never touches the production models; its `canary_runs` rows land in that dataset too, and its tables expire after 14 days.
 
 Logs on a public repo are public, so neither workflow prints a metric value: a failed canary names the metric and month, and the numbers are in `canary_runs`. Turn on **Settings > Notifications > Actions > Only notify for failed workflows** to get the failure email. GitHub pauses schedules on a public repo after 60 days without activity.
 
@@ -148,6 +150,12 @@ gh variable set GCP_PROJECT_ID --body $PROJECT_ID
 gh variable set GCP_WIF_PROVIDER --body projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/providers/github-repo
 ```
 
+Create the CI dataset that runs from other branches build into (its tables expire after 14 days):
+
+```bash
+bq mk --dataset --location=us-central1 --default_table_expiration 1209600 $PROJECT_ID:dbt_semantic_layer_ci
+```
+
 Dataset access goes on each dataset's access list. `bq add-iam-policy-binding --dataset` needs allowlisting on most projects, so append the entries with the BigQuery client (it keeps the existing entries):
 
 ```bash
@@ -155,7 +163,7 @@ PROJECT_ID=$PROJECT_ID PRINCIPAL=$PRINCIPAL python - <<'PY'
 import os
 from google.cloud import bigquery
 client = bigquery.Client(project=os.environ["PROJECT_ID"])
-for name, role in (("youtube_analytics", "READER"), ("dbt_semantic_layer", "WRITER")):
+for name, role in (("youtube_analytics", "READER"), ("dbt_semantic_layer", "WRITER"), ("dbt_semantic_layer_ci", "WRITER")):
     dataset = client.get_dataset(f"{client.project}.{name}")
     entries = list(dataset.access_entries)
     entries.append(bigquery.AccessEntry(role=role, entity_type="iamMember", entity_id=os.environ["PRINCIPAL"]))
@@ -164,7 +172,7 @@ for name, role in (("youtube_analytics", "READER"), ("dbt_semantic_layer", "WRIT
 PY
 ```
 
-The attribute condition limits the pool to this one repository. READER is Data Viewer and WRITER is Data Editor, so the workflows can run queries, read the pipeline's tables and write only the dbt dataset.
+The attribute condition limits the pool to this one repository. READER is Data Viewer and WRITER is Data Editor, so the workflows can run queries, read the pipeline's tables and write only the two dbt datasets.
 
 ## Settled months
 
