@@ -5,6 +5,8 @@ name: Metric canary and weekly report
 # fallback and a manual button. The canary runs first, then the channel report.
 # Logs never show metric values (this repo is public); results go to BigQuery:
 # canary_runs, canary_baseline and weekly_channel_report in dbt_semantic_layer.
+# A manual run from any other branch builds into dbt_semantic_layer_ci instead and never
+# writes the report, so testing a branch cannot change the production models or numbers.
 on:
   repository_dispatch:
     types: [youtube-refresh-complete]
@@ -25,6 +27,9 @@ concurrency:
 env:
   DBT_PROFILES_DIR: ci
   GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  # main builds production; every other branch gets its own dataset (tables expire after 14 days).
+  DBT_DATASET: ${{ github.ref == 'refs/heads/main' && 'dbt_semantic_layer' || 'dbt_semantic_layer_ci' }}
+  CANARY_DATASET: ${{ github.ref == 'refs/heads/main' && 'dbt_semantic_layer' || 'dbt_semantic_layer_ci' }}
 
 jobs:
   # The cron is a fallback: skip it when a refresh-triggered run already succeeded this week.
@@ -83,9 +88,10 @@ jobs:
 
   report:
     needs: canary
-    # Runs after the canary even when a number moved: the report is still the week's numbers,
-    # and the canary failure is the alert. Skipped only when the canary job was skipped.
-    if: ${{ !cancelled() && needs.canary.result != 'skipped' }}
+    # Runs only when the canary passed on main. A moved number in a settled month means a model
+    # or upstream change that needs review, so a report built on those models would be wrong.
+    # Fix or re-pin, then rerun the workflow to write the week's report.
+    if: ${{ needs.canary.result == 'success' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
