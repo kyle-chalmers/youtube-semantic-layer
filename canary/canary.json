@@ -17,6 +17,6 @@
   ],
   "group_by": "metric_time__month",
   "start_time": "2026-08-01",
-  "end_time": "2026-08-31",
+  "end_time": "2026-09-30",
   "decimals": 4
 }
