@@ -30,10 +30,10 @@ When asked anything about the channel's numbers (views, watch time, subscribers,
 - Ad hoc SQL: `bq query --use_legacy_sql=false '<sql>'`
 
 ## Data notes
-- Reporting API tables are the canonical source from 2026-08-06 (`var reporting_complete_from`). For earlier periods use the `analytics_*` metrics (Analytics API, from 2025-10-16).
+- Reporting API tables are the canonical source from 2026-08-06 (`var reporting_complete_from`). For earlier periods use the `analytics_*` metrics (Analytics API, from 2025-10-16; 2025-10-22 and 2025-10-23 are missing, so October 2025 is two days short).
 - `total_views` is real views. Average view duration divides watch time by engaged views, as YouTube does. Never reconstruct views from watch time and average view duration: that gives engaged views.
 - `video_metadata` has one row per video per snapshot date; `stg_video_metadata` keeps the latest snapshot.
-- Reporting reissues a day's report for up to about 36 days, and the weekly Analytics refresh rewrites days 6 to 35 days old, so a month is final about five weeks after it closes. `canary/sql/settled_months.sql` shows the Analytics window.
+- Reporting reissues a day's report for up to about 36 days (observed; YouTube documents no limit), and the weekly Analytics refresh rewrites days 6 to 35 days old, so a month is final about five weeks after it closes. `canary/sql/settled_months.sql` shows the Analytics window.
 
 ## Working principles
 - Print SQL as a formatted code block before running it.

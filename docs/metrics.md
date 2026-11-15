@@ -10,7 +10,7 @@ returns a partial total, not an error.
 
 ## analytics_traffic_days
 
-Analytics API history: views per video per activity day per traffic source, from 2025-10-16.
+Analytics API history: views per video per activity day per traffic source, from 2025-10-16 (2025-10-22 and 2025-10-23 are missing, so October 2025 is two days short).
 
 ### `analytics_views`: Views (Analytics API history)
 
@@ -166,7 +166,7 @@ Card teaser impressions. Additive.
 
 ## video_days
 
-Analytics API history per video per activity day, from 2025-10-16. Minutes are truncated to whole minutes per row (about 2% below Reporting). Use for periods before 2026-08-06.
+Analytics API history per video per activity day, from 2025-10-16 (2025-10-22 and 2025-10-23 are missing, so October 2025 is two days short). Minutes are truncated to whole minutes per row (about 2% below Reporting). Use for periods before 2026-08-06.
 
 ### `analytics_minutes_watched`: Minutes Watched (Analytics API history)
 
@@ -365,7 +365,7 @@ Total watch time in seconds (Reporting API watch time minutes * 60, not truncate
 
 ### `total_views`: Views
 
-Views as YouTube counts them (Reporting API). Since 2026-08-24 YouTube counts a view when playback starts; Shorts always worked that way. Additive. Group by traffic source, device, OS, playback location, subscribed status, country or video.
+Views as YouTube counts them (Reporting API). Since 2026-08-24 YouTube counts a view when playback starts; Shorts have counted that way since 2025-03-31. Additive. Group by traffic source, device, OS, playback location, subscribed status, country or video.
 
 - **Type:** simple (sum of measure `views`)
 - **Source:** `reporting_channel_combined_a3`
@@ -378,7 +378,7 @@ Views per Pacific day, video, traffic source and traffic source detail (search t
 
 ### `traffic_detail_views`: Views by Traffic Detail
 
-Views from the traffic source report, for grouping by traffic_source_detail (search term, referring video or site). Totals match total_views; use total_views unless the detail is the question.
+Views from the traffic source report, for grouping by traffic_source_detail (search term, referring video or site). Totals match total_views from September 2026 (4 lower in August 2026); use total_views unless the detail is the question.
 
 - **Type:** simple (sum of measure `detail_views`)
 - **Source:** `reporting_channel_traffic_source_a3`

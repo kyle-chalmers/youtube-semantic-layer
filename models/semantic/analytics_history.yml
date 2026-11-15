@@ -1,6 +1,6 @@
 semantic_models:
   - name: video_days
-    description: "Analytics API history per video per activity day, from 2025-10-16. Minutes are truncated to whole minutes per row (about 2% below Reporting). Use for periods before 2026-08-06."
+    description: "Analytics API history per video per activity day, from 2025-10-16 (2025-10-22 and 2025-10-23 are missing, so October 2025 is two days short). Minutes are truncated to whole minutes per row (about 2% below Reporting). Use for periods before 2026-08-06."
     model: ref('fct_video_days')
     defaults:
       agg_time_dimension: activity_date
@@ -31,7 +31,7 @@ semantic_models:
         expr: shares
 
   - name: analytics_traffic_days
-    description: "Analytics API history: views per video per activity day per traffic source, from 2025-10-16."
+    description: "Analytics API history: views per video per activity day per traffic source, from 2025-10-16 (2025-10-22 and 2025-10-23 are missing, so October 2025 is two days short)."
     model: ref('fct_analytics_traffic_days')
     defaults:
       agg_time_dimension: activity_date

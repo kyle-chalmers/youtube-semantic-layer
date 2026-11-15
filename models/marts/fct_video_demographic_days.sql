@@ -10,15 +10,17 @@ with video_day_views as (
 )
 
 select
-    {{ row_key(['d.report_date', 'd.video_id', 'd.subscribed_status', 'd.country_code', 'd.age_group',
-                'd.gender']) }} as row_key,
+    {{ row_key(['d.report_date', 'd.video_id', 'd.live_or_on_demand', 'd.subscribed_status', 'd.country_code',
+                'd.age_group', 'd.gender']) }} as row_key,
     d.report_date,
     d.video_id,
+    d.live_or_on_demand,
     d.subscribed_status,
     d.country_code,
     d.age_group,
     d.gender,
     d.views_percentage,
+    -- shortcut: assumes views_percentage sums to 100 per video-day across live and on-demand, revisit when a live stream first appears
     coalesce(v.video_day_views, 0) * d.views_percentage / 100 as estimated_views
 from {{ ref('stg_reporting_channel_demographics') }} as d
 left join video_day_views as v

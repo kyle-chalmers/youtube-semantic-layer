@@ -1,8 +1,10 @@
 -- Shares per Pacific day, video, subscribed status, country and sharing service.
 select
-    {{ row_key(['report_date', 'video_id', 'subscribed_status', 'country_code', 'sharing_service']) }} as row_key,
+    {{ row_key(['report_date', 'video_id', 'live_or_on_demand', 'subscribed_status', 'country_code',
+                'sharing_service']) }} as row_key,
     report_date,
     video_id,
+    live_or_on_demand,
     subscribed_status,
     country_code,
     {{ code_name('sharing_service', 'sharing_service') }} as sharing_service,
