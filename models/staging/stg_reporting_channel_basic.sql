@@ -1,10 +1,12 @@
 -- One row per Pacific day, video, subscribed status and country.
--- Rows with no video_id are channel-level activity (mostly subscribers gained on the channel page);
+-- Rows with no video_id are channel-level activity (mostly subscribers gained on the channel page,
+-- plus activity on deleted videos);
 -- they are kept so channel totals match YouTube Studio and labeled by attribution.
 select
     report_date,
     video_id,
     if(video_id is null, 'channel', 'video') as attribution,
+    live_or_on_demand,
     subscribed_status,
     country_code,
     likes,

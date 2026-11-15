@@ -22,7 +22,7 @@ The source tables come from the [youtube-bigquery-pipeline](https://github.com/k
 | Reporting API | `reporting_channel_basic_a3` | video, day, subscribed status, country (plus channel-level rows with no video) | 2026-08-06 on | likes, comments, shares, subscribers |
 | Reporting API | `reporting_channel_reach_combined_a1` | video, day, traffic source, detail, device, OS | 2026-08-06 on | impressions, impressions CTR |
 | Reporting API | `traffic_source_a3`, `demographics_a1`, `cards_a1`, `end_screens_a1`, `sharing_service_a1` | per report | 2026-08-06 on | traffic detail, demographic estimates, cards, end screens, shares by service |
-| Analytics API | `daily_video_analytics`, `daily_traffic_sources` | video, day (and traffic source) | 2025-10-16 on | `analytics_*` history metrics |
+| Analytics API | `daily_video_analytics`, `daily_traffic_sources` | video, day (and traffic source) | 2025-10-16 on (2025-10-22 and 2025-10-23 missing) | `analytics_*` history metrics |
 | Data API | `daily_video_stats`, `video_metadata` | video, snapshot date | 2026-02-17 on | lifetime counters, the video dimension |
 
 Every fact joins one `videos` dimension, so any metric can be grouped by `video__title` or `video__video_type`. `models/semantic/` holds 37 metrics; each one's description says what it means, which table it reads, when its data starts, and whether it adds up.
@@ -33,7 +33,7 @@ Things that trip people up:
 - **Impressions cover six surfaces only** (search, suggested, browse, channel page and two playlist surfaces). Never divide views by impressions; use `impressions_ctr`.
 - **Channel-level rows.** About a third of subscribers gained are not tied to a video. They count in channel totals; filter `attribution = 'video'` to rank videos.
 - **Demographics are estimates.** YouTube only gives each age and gender group's share of a video-day's logged-in views.
-- **Recent days move.** Reporting reissues a day's report for up to about five weeks, and the pipeline rewrites Analytics days 6 to 35 days old every week.
+- **Recent days move.** Reporting reissues a day's report for up to about five weeks (observed; YouTube documents no limit), and the pipeline rewrites Analytics days 6 to 35 days old every week.
 
 Using your own data: point `models/staging/_sources.yml` at your own pipeline's tables, or keep only the models you have sources for.
 
@@ -123,7 +123,7 @@ To send the trigger from another system, POST to `https://api.github.com/repos/<
 
 A manual run from any branch other than main builds into `dbt_semantic_layer_ci` and skips the report, so testing a change never touches the production models; its `canary_runs` rows land in that dataset too, and its tables expire after 14 days.
 
-Logs on a public repo are public, so neither workflow prints a metric value: a failed canary names the metric and month, and the numbers are in `canary_runs`. Turn on **Settings > Notifications > Actions > Only notify for failed workflows** to get the failure email. GitHub pauses schedules on a public repo after 60 days without activity.
+Logs on a public repo are public, so neither workflow prints a metric value: a failed canary names the metric and month, and the numbers are in `canary_runs`. Turn on **Settings > Notifications > System > Actions > Only notify for failed workflows** to get the failure email. GitHub pauses schedules on a public repo after 60 days without activity.
 
 ### One-time keyless auth (Workload Identity Federation)
 

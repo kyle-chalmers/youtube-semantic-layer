@@ -1,11 +1,12 @@
 -- Views, engaged views and watch time per Pacific day, video, subscribed status, country,
 -- traffic source, device, operating system and playback location, with code names attached.
 select
-    {{ row_key(['report_date', 'video_id', 'subscribed_status', 'country_code', 'playback_location_type',
-                'traffic_source_type', 'device_type', 'operating_system']) }} as row_key,
+    {{ row_key(['report_date', 'video_id', 'live_or_on_demand', 'subscribed_status', 'country_code',
+                'playback_location_type', 'traffic_source_type', 'device_type', 'operating_system']) }} as row_key,
     report_date,
     video_id,
     attribution,
+    live_or_on_demand,
     subscribed_status,
     country_code,
     {{ code_name('traffic_source_type', 'traffic_source_type') }} as traffic_source,

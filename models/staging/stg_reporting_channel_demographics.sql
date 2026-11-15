@@ -3,6 +3,7 @@
 select
     report_date,
     video_id,
+    live_or_on_demand,
     subscribed_status,
     country_code,
     age_group,

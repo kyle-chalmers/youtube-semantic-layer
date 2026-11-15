@@ -13,7 +13,8 @@ seed-paths: ["seeds"]
 
 vars:
   # Every Reporting API table has complete daily data from this date. Earlier days are
-  # missing from some tables (basic has a 15-day gap in June 2026, combined starts here).
+  # missing from some tables (basic has two gaps, Jun 16 to 21 and Jun 25 to Jul 3 2026,
+  # 15 days in total; combined starts here).
   reporting_complete_from: "2026-08-06"
 
 clean-targets:

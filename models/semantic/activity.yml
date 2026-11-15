@@ -18,7 +18,7 @@ semantic_models:
           time_granularity: day
       - name: attribution
         type: categorical
-        description: "video, or channel for activity YouTube does not tie to a video. About a third of subscribers gained are channel-level. Filter to video for per-video rankings."
+        description: "video, or channel for activity YouTube does not tie to a video. Per Google's Reporting API docs, an empty video_id marks channel-page subscriptions and also activity on deleted videos. About a third of subscribers gained are channel-level. Filter to video for per-video rankings."
       - name: subscribed_status
         type: categorical
       - name: country_code

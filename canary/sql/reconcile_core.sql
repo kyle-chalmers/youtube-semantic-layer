@@ -1,7 +1,8 @@
 -- Independent check of the core metrics for one month, written on the source tables
 -- (not the dbt models). Compare with:
 --   mf query --metrics total_views,total_engaged_views,total_seconds_watched,total_minutes_watched,avg_view_duration_seconds,total_likes,total_dislikes,total_comments,total_shares,subscribers_gained,subscribers_lost,playlist_adds,playlist_removes --group-by metric_time__month --start-time 2026-09-01 --end-time 2026-09-30
--- and, for video-attributed subscribers, add --where "{{ Dimension('video_activity_day__attribution') }} = 'video'".
+-- For video-attributed subscribers, run this as its own query (the filter does not apply to total_views):
+--   mf query --metrics subscribers_gained --group-by metric_time__month --start-time 2026-09-01 --end-time 2026-09-30 --where "{{ Dimension('video_activity_day__attribution') }} = 'video'"
 -- Replace the project and dataset with your own.
 with combined as (
     select

@@ -7,7 +7,8 @@ sources:
     description: >
       Tables written by youtube-bigquery-pipeline. Analytics API tables are rewritten weekly for
       activity dates 6 to 35 days old. Reporting API tables replace a day's partition whenever
-      YouTube issues a newer version of that day's report, up to about 36 days later.
+      YouTube issues a newer version of that day's report, up to about 36 days later (observed;
+      YouTube documents no limit).
     tables:
       - name: daily_video_analytics
         description: Analytics API, one row per video per activity day. Minutes are truncated to whole minutes per row.
@@ -18,7 +19,7 @@ sources:
       - name: video_metadata
         description: Data API video attributes, one row per video per snapshot date.
       - name: reporting_channel_basic_a3
-        description: Reporting API, per video per Pacific day per subscribed status per country. Rows with no video are channel-level activity.
+        description: Reporting API, per video per Pacific day per subscribed status per country. Rows with no video are channel-level activity or activity on deleted videos.
       - name: reporting_channel_combined_a3
         description: Reporting API, basic grain plus playback location, traffic source, device and operating system.
       - name: reporting_channel_traffic_source_a3
