@@ -122,4 +122,6 @@ def test_semi_additive_measure_formula_says_latest_snapshot(manifest):
         "name": "snapshot_date", "window_choice": "max"}
     manifest["metrics"].append(metric("lifetime_views", "simple", ["lifetime_views"], measure={"name": "lifetime_views"}))
     section = build_glossary.metric_section(manifest, "lifetime_views")
-    assert "latest snapshot" in section and "sum of measure" not in section
+    assert "latest snapshot in each period" in section and "sum of measure" not in section
+    manifest["semantic_models"][-1]["measures"][0]["non_additive_dimension"]["window_groupings"] = ["video"]
+    assert "latest snapshot per video" in build_glossary.metric_section(manifest, "lifetime_views")

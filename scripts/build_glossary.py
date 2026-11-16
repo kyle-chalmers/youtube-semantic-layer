@@ -74,8 +74,10 @@ def _formula(metric: dict, by_measure: dict[str, dict]) -> str:
         return metric["type"]
     name = params["measure"]["name"]
     measure = next((m for m in by_measure[name].get("measures", []) if m["name"] == name), {})
-    if measure.get("non_additive_dimension"):
-        return f"measure `{name}` at the latest snapshot in each period, summed across videos"
+    semi_additive = measure.get("non_additive_dimension")
+    if semi_additive:
+        per = "".join(f" per {g}" for g in semi_additive.get("window_groupings") or [])
+        return f"measure `{name}` at the latest snapshot{per} in each period, summed across videos"
     return f"sum of measure `{name}`"
 
 
