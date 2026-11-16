@@ -250,31 +250,31 @@ End screen element impressions. Additive.
 
 ## video_lifetime_snapshots
 
-Lifetime view, like and comment counts per video per snapshot date (Data API), from 2026-02-17. Running totals: they add across videos, and over time the latest snapshot in the period is used.
+Lifetime view, like and comment counts per video per snapshot date (Data API), from 2026-02-17. Running totals: they add across videos, and over time each video's latest snapshot in the period is used.
 
 ### `lifetime_comments`: Lifetime Comments
 
-Lifetime comment count at the latest snapshot in the period. Running total.
+Lifetime comment count at the latest snapshot of each video in the period. Running total.
 
-- **Type:** simple (measure `lifetime_comments` at the latest snapshot in each period, summed across videos)
+- **Type:** simple (measure `lifetime_comments` at the latest snapshot per video in each period, summed across videos)
 - **Source:** `daily_video_stats`
 - **Data starts:** 2026-02-17
 - **Group by:** `metric_time`, `video`, `video__title`, `video__video_type`, `video__published_date`, `video__duration_seconds`
 
 ### `lifetime_likes`: Lifetime Likes
 
-Lifetime like count at the latest snapshot in the period. Running total.
+Lifetime like count at the latest snapshot of each video in the period. Running total.
 
-- **Type:** simple (measure `lifetime_likes` at the latest snapshot in each period, summed across videos)
+- **Type:** simple (measure `lifetime_likes` at the latest snapshot per video in each period, summed across videos)
 - **Source:** `daily_video_stats`
 - **Data starts:** 2026-02-17
 - **Group by:** `metric_time`, `video`, `video__title`, `video__video_type`, `video__published_date`, `video__duration_seconds`
 
 ### `lifetime_views`: Lifetime Views
 
-Lifetime view count from the Data API at the latest snapshot in the period. Running total: compare snapshots, never add across days. Data API timing, not Pacific days.
+Lifetime view count from the Data API at the latest snapshot of each video in the period. Running total: compare snapshots, never add across days. Data API timing, not Pacific days.
 
-- **Type:** simple (measure `lifetime_views` at the latest snapshot in each period, summed across videos)
+- **Type:** simple (measure `lifetime_views` at the latest snapshot per video in each period, summed across videos)
 - **Source:** `daily_video_stats`
 - **Data starts:** 2026-02-17
 - **Group by:** `metric_time`, `video`, `video__title`, `video__video_type`, `video__published_date`, `video__duration_seconds`

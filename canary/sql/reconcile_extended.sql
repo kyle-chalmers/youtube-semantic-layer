@@ -1,6 +1,6 @@
 -- Independent check of every non-core metric for September 2026, on the source tables.
 -- Compare with mf query --metrics <metric> --group-by metric_time__month --start-time 2026-09-01 --end-time 2026-09-30.
--- lifetime_* use the latest snapshot in the month. Replace the project and dataset with your own.
+-- lifetime_* use each video's latest snapshot in the month. Replace the project and dataset with your own.
 declare start_date date default '2026-09-01';
 declare end_date date default '2026-09-30';
 
@@ -54,10 +54,11 @@ sharing as (
 
 lifetime as (
     select sum(view_count) as lifetime_views, sum(like_count) as lifetime_likes, sum(comment_count) as lifetime_comments
-    from `your-gcp-project-id.youtube_analytics.daily_video_stats`
-    where snapshot_date = (
-        select max(snapshot_date) from `your-gcp-project-id.youtube_analytics.daily_video_stats`
+    from (
+        select view_count, like_count, comment_count
+        from `your-gcp-project-id.youtube_analytics.daily_video_stats`
         where snapshot_date between start_date and end_date
+        qualify row_number() over (partition by video_id order by snapshot_date desc) = 1
     )
 ),
 

@@ -1,6 +1,6 @@
 semantic_models:
   - name: video_lifetime_snapshots
-    description: "Lifetime view, like and comment counts per video per snapshot date (Data API), from 2026-02-17. Running totals: they add across videos, and over time the latest snapshot in the period is used."
+    description: "Lifetime view, like and comment counts per video per snapshot date (Data API), from 2026-02-17. Running totals: they add across videos, and over time each video's latest snapshot in the period is used."
     model: ref('fct_video_lifetime_snapshots')
     defaults:
       agg_time_dimension: snapshot_date
@@ -23,23 +23,29 @@ semantic_models:
         non_additive_dimension:
           name: snapshot_date
           window_choice: max
+          window_groupings:
+            - video
       - name: lifetime_likes
         agg: sum
         expr: like_count
         non_additive_dimension:
           name: snapshot_date
           window_choice: max
+          window_groupings:
+            - video
       - name: lifetime_comments
         agg: sum
         expr: comment_count
         non_additive_dimension:
           name: snapshot_date
           window_choice: max
+          window_groupings:
+            - video
 
 metrics:
 - name: lifetime_views
   label: Lifetime Views
-  description: 'Lifetime view count from the Data API at the latest snapshot in the period. Running total:
+  description: 'Lifetime view count from the Data API at the latest snapshot of each video in the period. Running total:
     compare snapshots, never add across days. Data API timing, not Pacific days.'
   type: simple
   type_params:
@@ -50,7 +56,7 @@ metrics:
       source: daily_video_stats
 - name: lifetime_likes
   label: Lifetime Likes
-  description: Lifetime like count at the latest snapshot in the period. Running total.
+  description: Lifetime like count at the latest snapshot of each video in the period. Running total.
   type: simple
   type_params:
     measure: lifetime_likes
@@ -60,7 +66,7 @@ metrics:
       source: daily_video_stats
 - name: lifetime_comments
   label: Lifetime Comments
-  description: Lifetime comment count at the latest snapshot in the period. Running total.
+  description: Lifetime comment count at the latest snapshot of each video in the period. Running total.
   type: simple
   type_params:
     measure: lifetime_comments

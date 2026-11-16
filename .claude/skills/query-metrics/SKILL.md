@@ -42,7 +42,7 @@ with the open-source MetricFlow CLI; no dbt platform account is needed.
 | Average of a rate | averaging daily `avg_view_duration_seconds` or `impressions_ctr` | query the ratio metric at the grain you need; MetricFlow recomputes it from totals |
 | Audience share by age | treating `estimated_demographic_views` as exact, or adding it across queries with different filters | group by `video_demographic_day__age_group`, then divide each row by the total of all rows; call it an estimate |
 | Views before August 2026 | `total_views` for June (returns nothing or a partial month) | `analytics_views` |
-| Lifetime counts | adding `lifetime_views` across days | `lifetime_views` takes the latest snapshot in each period by itself; compare periods, never sum them |
+| Lifetime counts | adding `lifetime_views` across days | `lifetime_views` takes each video's latest snapshot in each period by itself; compare periods, never sum them |
 
 ## Worked examples
 
